@@ -1,0 +1,146 @@
+[
+  {
+    "id": 1,
+    "question": "Con gì đập thì sống, không đập thì chết?",
+    "options": [
+      "Con tim",
+      "Con muỗi",
+      "Con cua",
+      "Con rắn"
+    ],
+    "answer": 0,
+    "explanation": "Con tim đập thì người ta mới sống được!"
+  },
+  {
+    "id": 2,
+    "question": "Bác Hồ đọc Tuyên ngôn Độc lập khai sinh ra nước Việt Nam Dân chủ Cộng hòa vào ngày tháng năm nào?",
+    "options": [
+      "19/08/1945",
+      "02/09/1945",
+      "30/04/1975",
+      "03/02/1930"
+    ],
+    "answer": 1,
+    "explanation": "Ngày 02/09/1945 tại Quảng trường Ba Đình lịch sử."
+  },
+  {
+    "id": 3,
+    "question": "Cái gì đen khi bạn mua nó, đỏ khi bạn dùng nó, và xám xịt khi bạn vứt nó đi?",
+    "options": [
+      "Thanh sô cô la",
+      "Cục than tổ ong",
+      "Cây nến sinh nhật",
+      "Bật lửa"
+    ],
+    "answer": 1,
+    "explanation": "Cục than lúc mua màu đen, khi đốt đỏ rực, cháy tàn thành tro màu xám."
+  },
+  {
+    "id": 4,
+    "question": "Hành tinh nào trong Hệ Mặt Trời được mệnh danh là 'Hành tinh Đỏ'?",
+    "options": [
+      "Sao Kim (Venus)",
+      "Sao Hỏa (Mars)",
+      "Sao Mộc (Jupiter)",
+      "Sao Thổ (Saturn)"
+    ],
+    "answer": 1,
+    "explanation": "Sao Hỏa (Mars) có bề mặt giàu oxit sắt màu đỏ cam."
+  },
+  {
+    "id": 5,
+    "question": "Con chuột nào đi bằng hai chân?",
+    "options": [
+      "Chuột Mickey",
+      "Chuột túi (Kangaroo)",
+      "Chuột cống",
+      "Chuột Jerry"
+    ],
+    "answer": 0,
+    "explanation": "Chuột Mickey luôn đi đứng bằng 2 chân như người!"
+  },
+  {
+    "id": 6,
+    "question": "Vịt nào đi bằng hai chân?",
+    "options": [
+      "Vịt Donald",
+      "Vịt xiêm",
+      "Tất cả các con vịt",
+      "Vịt quay Bắc Kinh"
+    ],
+    "answer": 2,
+    "explanation": "Đã là con vịt bình thường thì con nào chả đi bằng hai chân!"
+  },
+  {
+    "id": 7,
+    "question": "Đỉnh núi nào được mệnh danh là 'Nóc nhà của Đông Dương'?",
+    "options": [
+      "Bà Nà",
+      "Fansipan",
+      "Langbiang",
+      "Pu Si Lung"
+    ],
+    "answer": 1,
+    "explanation": "Fansipan cao 3.143m tại Lào Cai, Việt Nam."
+  },
+  {
+    "id": 8,
+    "question": "Một người đàn ông đi dưới trời mưa mà không che dù hay đội mũ, nhưng không một sợi tóc nào bị ướt. Vì sao?",
+    "options": [
+      "Ông ấy đi xe hơi",
+      "Ông ấy bị hói đầu",
+      "Trời không mưa",
+      "Ông ấy chạy rất nhanh"
+    ],
+    "answer": 1,
+    "explanation": "Vì ông ấy hói đầu, làm gì có cọng tóc nào mà ướt!"
+  },
+  {
+    "id": 9,
+    "question": "Nguyên tố hóa học nào chiếm tỉ lệ lớn nhất trong không khí của Trái Đất?",
+    "options": [
+      "Oxy (O2)",
+      "Nitơ (N2)",
+      "Cacbonic (CO2)",
+      "Hiđro (H2)"
+    ],
+    "answer": 1,
+    "explanation": "Khí Nitơ chiếm khoảng 78% thể tích bầu khí quyển."
+  },
+  {
+    "id": 10,
+    "question": "Tháng nào trong năm có 28 ngày?",
+    "options": [
+      "Chỉ tháng 2",
+      "Tháng 2 năm nhuận",
+      "Tất cả các tháng",
+      "Không tháng nào cả"
+    ],
+    "answer": 2,
+    "explanation": "Tháng nào trong năm cũng đều có ít nhất 28 ngày!"
+  },
+  {
+    "id": 11,
+    "question": "Trong bảng cửu chương, 7 nhân 8 bằng bao nhiêu?",
+    "options": [
+      "54",
+      "56",
+      "64",
+      "58"
+    ],
+    "answer": 1,
+    "explanation": "7 x 8 = 56."
+  },
+  {
+    "id": 12,
+    "question": "Ai là tác giả của tác phẩm văn học nổi tiếng 'Tắt đèn'?",
+    "options": [
+      "Nam Cao",
+      "Ngô Tất Tố",
+      "Vũ Trọng Phụng",
+      "Kim Lân"
+    ],
+    "answer": 1,
+    "explanation": "Tác phẩm 'Tắt đèn' của nhà văn Ngô Tất Tố sáng tác năm 1937."
+  }
+]

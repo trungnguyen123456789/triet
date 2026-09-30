@@ -14,12 +14,66 @@ const io = new Server(server, {
 
 const PORT = process.env.PORT || 3000;
 
-// Load questions and rewards
+// Load questions and rewards with resilient fallback and auto-creation
 const questionsPath = path.join(__dirname, 'data', 'questions.json');
 const rewardsPath = path.join(__dirname, 'data', 'rewards.json');
 
-let questions = JSON.parse(fs.readFileSync(questionsPath, 'utf8'));
-let rewards = JSON.parse(fs.readFileSync(rewardsPath, 'utf8'));
+const defaultQuestions = [
+  { id: 1, question: "Con gì đập thì sống, không đập thì chết?", options: ["Con tim", "Con muỗi", "Con cua", "Con rắn"], answer: 0, explanation: "Con tim đập thì người ta mới sống được!" },
+  { id: 2, question: "Bác Hồ đọc Tuyên ngôn Độc lập khai sinh ra nước Việt Nam Dân chủ Cộng hòa vào ngày tháng năm nào?", options: ["19/08/1945", "02/09/1945", "30/04/1975", "03/02/1930"], answer: 1, explanation: "Ngày 02/09/1945 tại Quảng trường Ba Đình lịch sử." },
+  { id: 3, question: "Cái gì đen khi bạn mua nó, đỏ khi bạn dùng nó, và xám xịt khi bạn vứt nó đi?", options: ["Thanh sô cô la", "Cục than tổ ong", "Cây nến sinh nhật", "Bật lửa"], answer: 1, explanation: "Cục than lúc mua màu đen, khi đốt đỏ rực, cháy tàn thành tro màu xám." },
+  { id: 4, question: "Hành tinh nào trong Hệ Mặt Trời được mệnh danh là 'Hành tinh Đỏ'?", options: ["Sao Kim (Venus)", "Sao Hỏa (Mars)", "Sao Mộc (Jupiter)", "Sao Thổ (Saturn)"], answer: 1, explanation: "Sao Hỏa (Mars) có bề mặt giàu oxit sắt màu đỏ cam." },
+  { id: 5, question: "Con chuột nào đi bằng hai chân?", options: ["Chuột Mickey", "Chuột túi (Kangaroo)", "Chuột cống", "Chuột Jerry"], answer: 0, explanation: "Chuột Mickey luôn đi đứng bằng 2 chân như người!" },
+  { id: 6, question: "Tác phẩm văn học 'Chí Phèo' là của nhà văn nào?", options: ["Vũ Trọng Phụng", "Ngô Tất Tố", "Nam Cao", "Nguyễn Tuân"], answer: 2, explanation: "Truyện ngắn kinh điển của nhà văn Nam Cao." },
+  { id: 7, question: "Đỉnh núi nào được mệnh danh là 'Nóc nhà của Đông Dương'?", options: ["Phan Xi Păng (Fansipan)", "Bạch Mộc Lương Tử", "Pusilung", "Núi Bà Đen"], answer: 0, explanation: "Đỉnh Fansipan cao 3.143m tại Sa Pa, Lào Cai." },
+  { id: 8, question: "Trong bảng tuần hoàn hóa học, nguyên tố Fe là tên của kim loại nào?", options: ["Đồng", "Kẽm", "Nhôm", "Sắt"], answer: 3, explanation: "Fe viết tắt từ tiếng Latin Ferrum, nghĩa là Sắt." },
+  { id: 9, question: "Thủ đô của nước Úc (Australia) là thành phố nào?", options: ["Sydney", "Melbourne", "Canberra", "Brisbane"], answer: 2, explanation: "Thủ đô của Úc là Canberra, không phải Sydney hay Melbourne." },
+  { id: 10, question: "Có một người đi ra ngoài mưa mà không đội mũ, không che ô nhưng không một sợi tóc nào bị ướt. Vì sao?", options: ["Người đó đi xe ô tô", "Người đó bị hói (không có tóc)", "Người đó mặc áo mưa", "Cơn mưa rào nhỏ"], answer: 1, explanation: "Vì người đó bị hói đầu nên làm gì có sợi tóc nào để ướt!" }
+];
+
+const defaultRewards = [
+  { id: 1, name: "Trà Sữa Full Topping (Ly Lớn)", price: 1500, stock: 2, icon: "🧋", desc: "Thưởng thức ly trà sữa mát lạnh cho cả tổ cùng chia vui." },
+  { id: 2, name: "Thẻ Miễn Trực Nhật 1 Tuần", price: 2000, stock: 1, icon: "🧹", desc: "Được giáo viên phê duyệt miễn phân công trực nhật lớp 1 tuần." },
+  { id: 3, name: "Gói Snack Khổng Lồ", price: 1000, stock: 3, icon: "🍿", desc: "Combo bánh snack đủ vị cho cả tổ nhâm nhi giờ ra chơi." },
+  { id: 4, name: "Bút Ký Tên Cao Cấp", price: 800, stock: 4, icon: "🖊️", desc: "Chiếc bút phong thủy viết chữ đẹp, thi cử may mắn." },
+  { id: 5, name: "Vé Cộng +1 Điểm Kiểm Tra Miệng", price: 2500, stock: 2, icon: "💯", desc: "Vé vàng quyền lực cộng thẳng 1 điểm vào bài kiểm tra miệng tiếp theo!" },
+  { id: 6, name: "Tập Vở Ghi Chép Xịn", price: 500, stock: 5, icon: "📓", desc: "Quyển sổ tay bìa cứng chất lượng cao." },
+  { id: 7, name: "Kẹo Mút Cầu Vồng (Gói 10 que)", price: 400, stock: 6, icon: "🍭", desc: "Ngọt ngào tình bạn, chia đều cho các thành viên trong tổ." }
+];
+
+let questions = defaultQuestions;
+let rewards = defaultRewards;
+
+const questionsInSubdir = path.join(__dirname, 'data', 'questions.json');
+const questionsInRoot = path.join(__dirname, 'questions.json');
+const rewardsInSubdir = path.join(__dirname, 'data', 'rewards.json');
+const rewardsInRoot = path.join(__dirname, 'rewards.json');
+
+try {
+  if (fs.existsSync(questionsInSubdir)) {
+    questions = JSON.parse(fs.readFileSync(questionsInSubdir, 'utf8'));
+  } else if (fs.existsSync(questionsInRoot)) {
+    questions = JSON.parse(fs.readFileSync(questionsInRoot, 'utf8'));
+  } else {
+    fs.mkdirSync(path.join(__dirname, 'data'), { recursive: true });
+    fs.writeFileSync(questionsInSubdir, JSON.stringify(defaultQuestions, null, 2), 'utf8');
+  }
+} catch (e) {
+  console.warn('Fallback default questions:', e.message);
+}
+
+try {
+  if (fs.existsSync(rewardsInSubdir)) {
+    rewards = JSON.parse(fs.readFileSync(rewardsInSubdir, 'utf8'));
+  } else if (fs.existsSync(rewardsInRoot)) {
+    rewards = JSON.parse(fs.readFileSync(rewardsInRoot, 'utf8'));
+  } else {
+    fs.mkdirSync(path.join(__dirname, 'data'), { recursive: true });
+    fs.writeFileSync(rewardsInSubdir, JSON.stringify(defaultRewards, null, 2), 'utf8');
+  }
+} catch (e) {
+  console.warn('Fallback default rewards:', e.message);
+}
 
 function getLocalIP() {
   const interfaces = os.networkInterfaces();

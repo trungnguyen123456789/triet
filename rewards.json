@@ -1,0 +1,58 @@
+[
+  {
+    "id": 1,
+    "name": "Trà Sữa Full Topping (Ly Lớn)",
+    "price": 1500,
+    "stock": 2,
+    "icon": "🧋",
+    "desc": "Thưởng thức ly trà sữa mát lạnh cho cả tổ cùng chia vui."
+  },
+  {
+    "id": 2,
+    "name": "Thẻ Miễn Trực Nhật 1 Tuần",
+    "price": 2000,
+    "stock": 1,
+    "icon": "🧹",
+    "desc": "Được giáo viên phê duyệt miễn phân công trực nhật lớp 1 tuần."
+  },
+  {
+    "id": 3,
+    "name": "Gói Snack Khổng Lồ",
+    "price": 1000,
+    "stock": 3,
+    "icon": "🍿",
+    "desc": "Combo bánh snack đủ vị cho cả tổ nhâm nhi giờ ra chơi."
+  },
+  {
+    "id": 4,
+    "name": "Bút Ký Tên Cao Cấp",
+    "price": 800,
+    "stock": 4,
+    "icon": "🖊️",
+    "desc": "Chiếc bút phong thủy viết chữ đẹp, thi cử may mắn."
+  },
+  {
+    "id": 5,
+    "name": "Vé Cộng +1 Điểm Kiểm Tra Miệng",
+    "price": 2500,
+    "stock": 2,
+    "icon": "💯",
+    "desc": "Vé vàng quyền lực cộng thẳng 1 điểm vào bài kiểm tra miệng tiếp theo!"
+  },
+  {
+    "id": 6,
+    "name": "Tập Vở Ghi Chép Xịn",
+    "price": 500,
+    "stock": 5,
+    "icon": "📓",
+    "desc": "Quyển sổ tay bìa cứng chất lượng cao."
+  },
+  {
+    "id": 7,
+    "name": "Kẹo Mút Cầu Vồng (Gói 10 que)",
+    "price": 400,
+    "stock": 6,
+    "icon": "🍭",
+    "desc": "Ngọt ngào tình bạn, chia đều cho các thành viên trong tổ."
+  }
+]
