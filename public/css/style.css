@@ -1,0 +1,190 @@
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800;900&family=Bungee&display=swap');
+
+:root {
+  --primary: #4f46e5;
+  --primary-hover: #4338ca;
+  --accent-gold: #f59e0b;
+  --accent-red: #ef4444;
+  --accent-green: #10b981;
+  --accent-blue: #3b82f6;
+  --accent-purple: #8b5cf6;
+  --bg-light: #f8fafc;
+  --card-light: #ffffff;
+  --text-main: #0f172a;
+  --text-muted: #64748b;
+  --border-light: #e2e8f0;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  font-family: 'Montserrat', sans-serif;
+  user-select: none;
+}
+
+/* Light Theme Background */
+body {
+  background: linear-gradient(135deg, #f8fafc 0%, #eef2f6 50%, #f1f5f9 100%);
+  color: var(--text-main);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* Bright Clean Cards */
+.glass-panel {
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(16px);
+  border: 1px solid rgba(226, 232, 240, 0.9);
+  box-shadow: 0 10px 30px -5px rgba(15, 23, 42, 0.06), 0 4px 12px -2px rgba(15, 23, 42, 0.04);
+}
+
+.bungee-font {
+  font-family: 'Bungee', cursive, sans-serif;
+}
+
+/* Animations */
+@keyframes pulseGlow {
+  0%, 100% { box-shadow: 0 0 15px rgba(245, 158, 11, 0.3); transform: scale(1); }
+  50% { box-shadow: 0 0 30px rgba(245, 158, 11, 0.6); transform: scale(1.02); }
+}
+
+@keyframes shakeBox {
+  0% { transform: rotate(0deg); }
+  25% { transform: rotate(-4deg); }
+  50% { transform: rotate(4deg); }
+  75% { transform: rotate(-4deg); }
+  100% { transform: rotate(0deg); }
+}
+
+.anim-shake:hover {
+  animation: shakeBox 0.4s ease-in-out infinite;
+}
+
+.anim-pulse {
+  animation: pulseGlow 2s infinite;
+}
+
+/* 20 Chest Cards */
+.chest-card {
+  perspective: 1000px;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.chest-card:hover {
+  transform: translateY(-6px) scale(1.05);
+}
+
+.chest-inner {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  text-align: center;
+  transition: transform 0.8s;
+  transform-style: preserve-3d;
+}
+
+.chest-card.flipped .chest-inner {
+  transform: rotateY(180deg);
+}
+
+.chest-front, .chest-back {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  border-radius: 1rem;
+}
+
+/* Light Front */
+.chest-front {
+  background: linear-gradient(145deg, #ffffff, #f1f5f9);
+  border: 2px solid #cbd5e1;
+  box-shadow: 0 6px 16px rgba(15, 23, 42, 0.06);
+}
+
+.chest-front.lucky-front {
+  border-color: #f59e0b;
+  background: linear-gradient(145deg, #fffbeb, #fef3c7);
+}
+
+.chest-front.unlucky-front {
+  border-color: #f43f5e;
+  background: linear-gradient(145deg, #fff1f2, #ffe4e6);
+}
+
+/* Light Back */
+.chest-back {
+  transform: rotateY(180deg);
+  background: linear-gradient(145deg, #ffffff, #f8fafc);
+  border: 2px solid #4f46e5;
+  box-shadow: 0 8px 24px rgba(79, 70, 229, 0.15);
+  padding: 0.5rem;
+}
+
+/* Answer option cards */
+.option-btn {
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08);
+}
+
+.option-btn:hover {
+  transform: translateY(-3px);
+  filter: brightness(1.05);
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.12);
+}
+
+.option-btn:active {
+  transform: translateY(1px);
+}
+
+.option-a { background: linear-gradient(135deg, #ef4444, #dc2626); }
+.option-b { background: linear-gradient(135deg, #2563eb, #1d4ed8); }
+.option-c { background: linear-gradient(135deg, #f59e0b, #d97706); }
+.option-d { background: linear-gradient(135deg, #10b981, #059669); }
+
+/* Wheel Canvas Container */
+.wheel-container {
+  position: relative;
+  width: 380px;
+  height: 380px;
+  margin: 0 auto;
+}
+
+.wheel-pointer {
+  position: absolute;
+  top: -15px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 0;
+  height: 0;
+  border-left: 20px solid transparent;
+  border-right: 20px solid transparent;
+  border-top: 35px solid #ef4444;
+  z-index: 20;
+  filter: drop-shadow(0 4px 6px rgba(0,0,0,0.3));
+}
+
+/* Custom scrollbar for white theme */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #f1f5f9;
+}
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}

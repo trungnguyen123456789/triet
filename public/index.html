@@ -1,0 +1,647 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gameshow Lớp Học - Màn Hình Máy Chiếu (Host)</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- FontAwesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <!-- Canvas Confetti -->
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+  <!-- Custom Styles -->
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body class="flex flex-col h-screen overflow-hidden text-slate-800 bg-slate-50">
+
+  <!-- Top Header Bar (White Theme) -->
+  <header class="h-16 bg-white/95 backdrop-blur-md border-b border-slate-200 flex items-center justify-between px-6 z-30 shadow-sm">
+    <div class="flex items-center gap-3">
+      <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-amber-500 to-indigo-600 flex items-center justify-center text-xl text-white shadow-md">
+        <i class="fa-solid fa-graduation-cap"></i>
+      </div>
+      <div>
+        <h1 class="text-xl font-black tracking-wider bungee-font bg-gradient-to-r from-amber-500 via-rose-500 to-indigo-600 bg-clip-text text-transparent">
+          CLASSROOM QUIZ SHOW
+        </h1>
+        <p class="text-xs text-slate-500 font-medium">Bản Quyền Lớp Học • 7 Nhóm Tranh Tài</p>
+      </div>
+    </div>
+
+    <!-- Status & Host Controls -->
+    <div class="flex items-center gap-3">
+      <div id="statusBadge" class="px-3.5 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider bg-indigo-50 text-indigo-700 border border-indigo-200">
+        ĐANG CHỜ BẮT ĐẦU
+      </div>
+      <div class="px-3 py-1.5 rounded-lg bg-emerald-50 border border-emerald-300 text-xs font-bold text-emerald-700 flex items-center gap-1.5">
+        <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+        <span>HỆ THỐNG TỰ ĐỘNG 100%</span>
+      </div>
+      <button id="toggleSoundBtn" class="px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 border border-slate-300 text-xs font-semibold text-slate-700 flex items-center gap-1.5 transition">
+        <i class="fa-solid fa-volume-high text-amber-500"></i>
+        <span>Âm Thanh: BẬT</span>
+      </button>
+      <button id="resetGameBtn" class="px-3 py-1.5 rounded-lg bg-rose-50 hover:bg-rose-100 border border-rose-200 text-xs font-semibold text-rose-600 transition">
+        <i class="fa-solid fa-rotate-left mr-1"></i> Đặt Lại
+      </button>
+    </div>
+  </header>
+
+  <!-- Main Body: 4/5 Left (Stage) & 1/5 Right (Teams Sidebar) -->
+  <div class="flex-1 flex overflow-hidden">
+    
+    <!-- 4/5 MAIN STAGE -->
+    <main class="w-4/5 h-full relative overflow-y-auto p-6 flex flex-col justify-center items-center">
+      
+      <!-- 1. LOBBY SCREEN -->
+      <div id="viewLobby" class="w-full max-w-4xl text-center space-y-6 animate-fade-in">
+        <div class="space-y-2">
+          <span class="px-4 py-1 rounded-full text-xs font-bold bg-amber-100 text-amber-800 border border-amber-300">
+            CHÀO MỪNG ĐẾN VỚI ĐẠI CHIẾN 7 NHÓM
+          </span>
+          <h2 class="text-4xl md:text-5xl font-black bungee-font text-slate-900">
+            SẴN SÀNG TRANH TÀI
+          </h2>
+          <p class="text-slate-600 max-w-xl mx-auto text-sm">
+            Mỗi bạn dùng điện thoại quét mã QR hoặc truy cập đường dẫn bên dưới, nhập tên và chọn đúng nhóm của mình để tham gia!
+          </p>
+        </div>
+
+        <!-- QR Code & Link Card -->
+        <div class="glass-panel p-6 rounded-3xl inline-flex flex-col md:flex-row items-center gap-8 border border-slate-200 shadow-xl">
+          <div class="bg-white p-3 rounded-2xl border-2 border-slate-200 shadow-md">
+            <img id="hostQrCode" src="" alt="QR Code" class="w-56 h-56 object-contain rounded-lg">
+          </div>
+          <div class="text-left space-y-4 max-w-sm">
+            <div>
+              <p class="text-xs font-bold text-slate-400 uppercase tracking-wider">Đường dẫn tham gia (WiFi Lớp):</p>
+              <a id="hostPlayUrl" href="#" target="_blank" class="text-lg font-black text-indigo-600 hover:underline break-all">
+                Đang tải...
+              </a>
+            </div>
+            <div class="flex items-center gap-3 text-sm text-slate-700 bg-slate-100/90 p-3 rounded-xl border border-slate-200">
+              <i class="fa-solid fa-users text-indigo-600 text-xl"></i>
+              <div>
+                <span id="lobbyPlayerCount" class="font-bold text-slate-900 text-lg">0</span> người chơi đã kết nối
+              </div>
+            </div>
+            <div class="flex gap-3">
+              <button id="btnOpenTutorial" class="flex-1 py-3 px-4 rounded-xl bg-slate-100 hover:bg-slate-200 border border-slate-300 text-sm font-bold text-slate-700 transition">
+                <i class="fa-solid fa-book-open mr-1.5"></i> Luật Chơi
+              </button>
+              <button id="btnStartGame" class="flex-1 py-3 px-6 rounded-xl bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white font-black text-sm shadow-md transition transform hover:scale-105 anim-pulse">
+                <i class="fa-solid fa-play mr-1.5"></i> BẮT ĐẦU
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div class="max-w-3xl mx-auto">
+          <p class="text-xs uppercase tracking-wider text-slate-500 font-bold mb-3">Danh sách thí sinh đang online:</p>
+          <div id="lobbyPlayersList" class="flex flex-wrap gap-2 justify-center max-h-32 overflow-y-auto p-2">
+            <!-- Dynamic player pills -->
+          </div>
+        </div>
+      </div>
+
+      <!-- 2. TUTORIAL VIEW -->
+      <div id="viewTutorial" class="hidden w-full max-w-4xl glass-panel p-8 rounded-3xl border border-slate-200 shadow-xl space-y-6">
+        <div class="flex justify-between items-center border-b border-slate-200 pb-4">
+          <div class="flex items-center gap-3">
+            <i class="fa-solid fa-circle-question text-amber-500 text-2xl"></i>
+            <h3 class="text-2xl font-black bungee-font text-slate-900">HƯỚNG DẪN LUẬT CHƠI</h3>
+          </div>
+          <button id="btnCloseTutorial" class="text-slate-400 hover:text-slate-700 text-xl">
+            <i class="fa-solid fa-xmark"></i>
+          </button>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-left text-sm">
+          <div class="p-4 rounded-2xl bg-amber-50/70 border border-amber-200 space-y-1.5">
+            <h4 class="font-bold text-amber-700 flex items-center gap-2 text-base">
+              <i class="fa-solid fa-bolt"></i> 1. Tranh Quyền Trả Lời (Tối đa 30s)
+            </h4>
+            <p class="text-slate-700">
+              Mỗi câu có 30 giây. Ai nhanh tay bấm chọn trên điện thoại sẽ cướp quyền cho cả nhóm! Trả lời đúng nhận <strong>+5đ Nhóm, +1đ Cá nhân</strong> và bốc Rương May Mắn.
+            </p>
+          </div>
+          <div class="p-4 rounded-2xl bg-rose-50/70 border border-rose-200 space-y-1.5">
+            <h4 class="font-bold text-rose-700 flex items-center gap-2 text-base">
+              <i class="fa-solid fa-skull"></i> 2. Trả Lời Sai & Rương Xui
+            </h4>
+            <p class="text-slate-700">
+              Nếu sai, người đó phải bốc <strong>Rương Xui Xẻo</strong>. Sau đó hệ thống cho 7 giây đọc hình phạt rồi tự động mở lại câu hỏi cho các nhóm còn lại!
+            </p>
+          </div>
+          <div class="p-4 rounded-2xl bg-emerald-50/70 border border-emerald-200 space-y-1.5">
+            <h4 class="font-bold text-emerald-700 flex items-center gap-2 text-base">
+              <i class="fa-solid fa-gift"></i> 3. Kho Báu & Vật Phẩm Độc Lạ
+            </h4>
+            <p class="text-slate-700">
+              Rương ẩn chứa: Siêu Đạo Tặc cướp điểm, Cào Bằng Thế Sự (tổng 7 đội / 7), Nhận Viện Trợ, Khiên Bảo Hộ, Cú Búng Tay Thanos (xóa sạch điểm cá nhân cả lớp), Thử Thách Thần Tính 6s...
+            </p>
+          </div>
+          <div class="p-4 rounded-2xl bg-indigo-50/70 border border-indigo-200 space-y-1.5">
+            <h4 class="font-bold text-indigo-700 flex items-center gap-2 text-base">
+              <i class="fa-solid fa-bag-shopping"></i> 4. Túi Đồ & Shop Đổi Quà
+            </h4>
+            <p class="text-slate-700">
+              Nút <strong>🎒 Vật Phẩm</strong> trên điện thoại giúp kích hoạt thẻ bài bất cứ lúc nào! Cuối game, điểm số được nhân 100 thành Xu để đổi trà sữa, bánh snack, vé miễn trực nhật!
+            </p>
+          </div>
+        </div>
+
+        <div class="text-center pt-2">
+          <button id="btnProceedFromTutorial" class="py-3 px-8 rounded-xl bg-indigo-600 hover:bg-indigo-700 font-bold text-white shadow-md">
+            ĐÃ HIỂU LUẬT • QUAY LẠI SẢNH
+          </button>
+        </div>
+      </div>
+
+      <!-- 3. COUNTDOWN SCREEN (5 - 4 - 3 - 2 - 1) -->
+      <div id="viewCountdown" class="hidden text-center space-y-4">
+        <h3 class="text-xl font-bold uppercase tracking-widest text-amber-600">CHÚ Ý LÊN MÀN HÌNH</h3>
+        <div id="countdownNumber" class="text-9xl md:text-[13rem] font-black bungee-font text-slate-900 drop-shadow-[0_4px_16px_rgba(245,158,11,0.5)] animate-pulse">
+          5
+        </div>
+        <p class="text-slate-500 font-semibold text-base">Câu hỏi chuẩn bị xuất hiện...</p>
+      </div>
+
+      <!-- 4. QUESTION & BUZZER STAGE -->
+      <div id="viewQuestion" class="hidden w-full max-w-5xl space-y-5">
+        
+        <!-- Header Info with 30s TIMER -->
+        <div class="flex justify-between items-center bg-white px-6 py-3 rounded-2xl border border-slate-200 shadow-sm">
+          <span id="questionCounter" class="text-sm font-bold text-indigo-600 bungee-font">CÂU HỎI 1 / 12</span>
+          
+          <!-- 30S TIMER CLOCK -->
+          <div class="flex items-center gap-3">
+            <div class="flex items-center gap-1.5 px-3 py-1 rounded-full bg-rose-50 border border-rose-200 text-rose-600 font-black text-sm">
+              <i class="fa-regular fa-clock text-xs"></i>
+              <span id="timer30sText">30s</span>
+            </div>
+            <!-- Progress Bar -->
+            <div class="w-32 h-2.5 bg-slate-100 rounded-full overflow-hidden border border-slate-200">
+              <div id="timer30sBar" class="h-full bg-gradient-to-r from-emerald-500 to-rose-500 transition-all duration-1000" style="width: 100%;"></div>
+            </div>
+          </div>
+
+          <div id="questionRoundBadge" class="hidden px-3 py-1 rounded-full text-xs font-black bg-amber-100 text-amber-800 border border-amber-300 flex items-center gap-1.5 animate-pulse">
+            <i class="fa-solid fa-bell"></i> <span>🔔 ĐỢT 2: ĐÃ MỞ LẠI CHUÔNG CHO TẤT CẢ CÁC NHÓM!</span>
+          </div>
+        </div>
+
+        <!-- Question Title Card -->
+        <div class="glass-panel p-8 md:p-10 rounded-3xl border border-slate-200 text-center shadow-xl relative overflow-hidden bg-white">
+          <h2 id="questionText" class="text-2xl md:text-4xl font-extrabold text-slate-900 leading-snug">
+            Nội dung câu hỏi đang được tải...
+          </h2>
+        </div>
+
+        <!-- 4 Answer Options -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div class="option-btn option-a p-5 rounded-2xl flex items-center gap-4 text-white shadow-md cursor-default border border-white/20 transition-all duration-300" id="optCard0">
+            <span class="w-12 h-12 rounded-xl bg-black/20 flex items-center justify-center font-black text-2xl bungee-font">A</span>
+            <span id="optText0" class="text-xl font-bold flex-1">Đáp án A</span>
+          </div>
+          <div class="option-btn option-b p-5 rounded-2xl flex items-center gap-4 text-white shadow-md cursor-default border border-white/20 transition-all duration-300" id="optCard1">
+            <span class="w-12 h-12 rounded-xl bg-black/20 flex items-center justify-center font-black text-2xl bungee-font">B</span>
+            <span id="optText1" class="text-xl font-bold flex-1">Đáp án B</span>
+          </div>
+          <div class="option-btn option-c p-5 rounded-2xl flex items-center gap-4 text-white shadow-md cursor-default border border-white/20 transition-all duration-300" id="optCard2">
+            <span class="w-12 h-12 rounded-xl bg-black/20 flex items-center justify-center font-black text-2xl bungee-font">C</span>
+            <span id="optText2" class="text-xl font-bold flex-1">Đáp án C</span>
+          </div>
+          <div class="option-btn option-d p-5 rounded-2xl flex items-center gap-4 text-white shadow-md cursor-default border border-white/20 transition-all duration-300" id="optCard3">
+            <span class="w-12 h-12 rounded-xl bg-black/20 flex items-center justify-center font-black text-2xl bungee-font">D</span>
+            <span id="optText3" class="text-xl font-bold flex-1">Đáp án D</span>
+          </div>
+        </div>
+
+        <!-- BUZZER NOTIFICATION BANNER (100% AUTOMATED, NO MANUAL BUTTONS) -->
+        <div id="buzzBanner" class="hidden glass-panel p-6 rounded-3xl border-2 border-amber-400 bg-white shadow-2xl animate-bounce space-y-4">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-4 text-left">
+              <div class="w-16 h-16 rounded-2xl bg-amber-100 border border-amber-300 flex items-center justify-center text-3xl text-amber-600">
+                <i class="fa-solid fa-bell"></i>
+              </div>
+              <div>
+                <p class="text-xs font-bold uppercase tracking-wider text-amber-600">ĐÃ GIÀNH QUYỀN TRẢ LỜI!</p>
+                <h3 class="text-2xl font-black text-slate-900">
+                  <span id="buzzPlayerName" class="text-indigo-600 font-extrabold">Học sinh</span> 
+                  (<span id="buzzTeamName" class="text-amber-600">Nhóm X</span>)
+                </h3>
+                <p class="text-sm font-semibold text-slate-700">
+                  Chọn: <span id="buzzChoiceText" class="text-slate-900 font-bold bg-slate-100 px-3 py-1 rounded-lg border border-slate-300">Đáp án C</span>
+                </p>
+              </div>
+            </div>
+
+            <!-- Automated Indicator -->
+            <div class="text-right space-y-1">
+              <div id="buzzVerdictBadge" class="px-4 py-2 rounded-xl text-sm font-black bungee-font bg-amber-100 text-amber-800 border border-amber-300">
+                ĐANG XỬ LÝ...
+              </div>
+              <p class="text-[11px] text-slate-400 font-semibold italic">Hệ thống đang tự động công bố</p>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- 5. 20 CHESTS VIEW (WITH 7-SECOND READ TIMER) -->
+      <div id="viewChests" class="hidden w-full max-w-5xl text-center space-y-6">
+        <div class="space-y-1.5">
+          <div id="chestTitleBadge" class="inline-block px-4 py-1 rounded-full text-xs font-black uppercase tracking-wider bg-amber-100 text-amber-800 border border-amber-300">
+            RƯƠNG MAY MẮN
+          </div>
+          <h2 id="chestMainTitle" class="text-3xl md:text-4xl font-black bungee-font text-slate-900">
+            CHỌN 1 TRONG 20 RƯƠNG PHẦN THƯỞNG
+          </h2>
+          <p id="chestSubTitle" class="text-slate-600 text-sm">
+            Thí sinh <span id="chestPickerName" class="font-bold text-indigo-600">...</span> hãy chạm vào 1 chiếc rương trên màn hình điện thoại!
+          </p>
+        </div>
+
+        <!-- 20 Chests Grid -->
+        <div id="chestsGrid" class="grid grid-cols-5 md:grid-cols-10 gap-3 max-w-4xl mx-auto">
+          <!-- Dynamically filled with 20 chests -->
+        </div>
+
+        <!-- Chest Result Announcement Card (Host manual control) -->
+        <div id="chestResultCard" class="hidden glass-panel max-w-lg mx-auto p-6 rounded-3xl border-2 border-indigo-400 text-center space-y-4 shadow-xl animate-fade-in bg-white">
+          <div id="chestResultIcon" class="text-5xl">🎁</div>
+          <h3 id="chestResultTitle" class="text-2xl font-black text-indigo-600">Tên Phần Thưởng</h3>
+          <p id="chestResultDesc" class="text-slate-700 text-base font-semibold">Mô tả tác dụng của rương</p>
+          
+          <!-- HOST MANUAL PROCEED BUTTONS -->
+          <div class="pt-4 border-t border-slate-200 flex flex-col sm:flex-row justify-center gap-3">
+            <button id="btnHostNextFromChest" class="flex-1 py-3 px-6 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-sm shadow-md flex items-center justify-center gap-2">
+              <span>CÂU HỎI KẾ TIẾP</span>
+              <i class="fa-solid fa-forward-step"></i>
+            </button>
+            <button id="btnHostReopenFromChest" class="flex-1 py-3 px-6 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-bold text-sm shadow-md flex items-center justify-center gap-2">
+              <i class="fa-solid fa-bell"></i>
+              <span>MỞ LẠI CHUÔNG</span>
+            </button>
+          </div>
+          <p class="text-[11px] text-slate-400 font-medium italic">Người điều hành bấm nút để tiếp tục khi lớp học đã sẵn sàng</p>
+        </div>
+      </div>
+
+      <!-- 6. ACTION PENALTY VIEW (YOUTUBE / TIKTOK INTEGRATED + 3 JUDGMENT BUTTONS) -->
+      <div id="viewActionPenalty" class="hidden w-full max-w-2xl text-center glass-panel p-8 rounded-3xl border-2 border-rose-400 shadow-xl space-y-5 bg-white">
+        <div class="w-16 h-16 rounded-2xl bg-rose-100 border border-rose-300 text-3xl flex items-center justify-center mx-auto text-rose-600" id="penaltyIcon">
+          💃
+        </div>
+        <div class="space-y-1">
+          <span id="penaltyTypeBadge" class="px-3 py-1 rounded-full text-xs font-bold bg-rose-100 text-rose-700 border border-rose-300">
+            HÌNH PHẠT HÀNH ĐỘNG
+          </span>
+          <h3 id="penaltyTitle" class="text-2xl md:text-3xl font-black bungee-font text-slate-900">IDOL GIỚI TRẺ</h3>
+          <p id="penaltyDesc" class="text-slate-700 text-sm font-semibold max-w-md mx-auto">
+            Người chơi phải biểu diễn theo video / nhạc nền!
+          </p>
+        </div>
+
+        <!-- Video Container (YouTube / TikTok) -->
+        <div id="penaltyVideoContainer" class="w-full max-w-lg mx-auto rounded-2xl overflow-hidden border-2 border-indigo-400 shadow-xl bg-black relative">
+          <iframe id="penaltyYoutubeFrame" class="w-full h-80" src="" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+        </div>
+
+        <!-- TikTok External Open Link (in case browser restricts TikTok embed) -->
+        <div id="tiktokLinkContainer" class="hidden text-center">
+          <a id="tiktokExternalLink" href="https://www.tiktok.com/@thienphuc0331/video/7559228650248260882" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs shadow-md transition">
+            <i class="fa-brands fa-tiktok text-rose-400"></i>
+            <span>MỞ VIDEO TRÊN TIKTOK (NẾU VIDEO BỊ CHẶN EMBED)</span>
+            <i class="fa-solid fa-arrow-up-right-from-square text-[10px]"></i>
+          </a>
+        </div>
+
+        <!-- HOST 3 JUDGMENT BUTTONS -->
+        <div class="pt-3 border-t border-slate-200 space-y-2">
+          <p class="text-xs uppercase font-bold text-slate-500">ĐÁNH GIÁ CỦA NGƯỜI ĐIỀU HÀNH SAU KHI PHÁT XONG:</p>
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+            <button id="btnJudgeSuccess" class="py-3 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow flex items-center justify-center gap-1.5">
+              <i class="fa-solid fa-check"></i> <span id="judgeSuccessText">ĐÃ HOÀN THÀNH</span>
+            </button>
+            <button id="btnJudgeRetry" class="py-3 px-3 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-bold text-xs shadow flex items-center justify-center gap-1.5">
+              <i class="fa-solid fa-rotate-right"></i> CHƯA ĐẠT (LÀM LẠI)
+            </button>
+            <button id="btnJudgePunish" class="py-3 px-3 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs shadow flex items-center justify-center gap-1.5">
+              <i class="fa-solid fa-skull"></i> CHỊU PHẠT (QUAY VÒNG)
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 7. WHEEL SPIN VIEW -->
+      <div id="viewWheel" class="hidden w-full max-w-2xl text-center space-y-6">
+        <div class="space-y-1.5">
+          <h3 id="wheelTitle" class="text-3xl font-black bungee-font text-slate-900">
+            VÒNG QUAY MAY MẮN
+          </h3>
+          <p id="wheelSubText" class="text-slate-600 text-sm">Vận mệnh đang xoay chuyển...</p>
+        </div>
+
+        <div class="wheel-container">
+          <div class="wheel-pointer"></div>
+          <canvas id="wheelCanvas" width="380" height="380" class="rounded-full shadow-2xl border-4 border-amber-400"></canvas>
+        </div>
+
+        <!-- Host Spin Button if student doesn't spin -->
+        <div class="pt-2">
+          <button id="btnHostSpinWheel" class="py-2.5 px-6 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white font-black text-xs shadow-md active:scale-95 transition">
+            <i class="fa-solid fa-rotate mr-1.5 animate-spin"></i> QUAY VÒNG (NẾU HỌC SINH CHƯA QUAY)
+          </button>
+        </div>
+
+        <div id="wheelResultBox" class="hidden glass-panel max-w-md mx-auto p-4 rounded-2xl border border-amber-400 space-y-2 bg-white">
+          <p class="text-xs uppercase font-bold text-slate-400">KẾT QUẢ VÒNG QUAY:</p>
+          <h4 id="wheelResultText" class="text-xl font-black text-indigo-600">...</h4>
+          <span class="text-xs text-slate-500 italic" id="wheel7sTimerNotice">⏳ Tự động tiếp tục sau 7 giây...</span>
+        </div>
+      </div>
+
+      <!-- 8. SPEED MATH VIEW (4 GIÂY) -->
+      <div id="viewSpeedMath" class="hidden w-full max-w-3xl text-center glass-panel p-10 rounded-3xl border-2 border-amber-400 shadow-xl space-y-8 bg-white">
+        <div class="space-y-1.5">
+          <span class="px-4 py-1 rounded-full text-xs font-black uppercase tracking-wider bg-amber-100 text-amber-800 border border-amber-300">
+            ⚡ THỬ THÁCH THẦN TÍNH
+          </span>
+          <h3 class="text-3xl font-black bungee-font text-slate-900">NÓI TO ĐÁP ÁN TRONG 4 GIÂY!</h3>
+        </div>
+
+        <div class="py-6 px-8 rounded-3xl bg-slate-900 text-white border border-slate-700 inline-block shadow-lg">
+          <span id="mathFormula" class="text-4xl md:text-6xl font-black text-amber-400 bungee-font tracking-wider">
+            982 + 192 + 12
+          </span>
+        </div>
+
+        <div id="mathCountdownSection" class="space-y-2">
+          <div class="text-6xl font-black bungee-font text-rose-600" id="mathTimerText">
+            4.0s
+          </div>
+          <p class="text-sm font-semibold text-rose-600">HÃY HÔ TO ĐÁP ÁN RA MIỆNG TRƯỚC KHI VỀ 0!</p>
+        </div>
+
+        <div id="mathRevealSection" class="hidden space-y-4">
+          <div id="mathWaitingMsg" class="text-2xl font-bold text-amber-600 animate-pulse">
+            ĐÁP ÁN LÀ...
+          </div>
+          <div id="mathFinalAnswer" class="hidden text-6xl font-black bungee-font text-emerald-600">
+            1186
+          </div>
+        </div>
+
+        <div id="mathHostButtons" class="hidden flex justify-center gap-4 pt-4 border-t border-slate-200">
+          <button id="btnMathHostCorrect" class="py-3 px-6 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm shadow-md flex items-center gap-2">
+            <i class="fa-solid fa-check"></i> ĐÚNG! (QUAY JACKPOT)
+          </button>
+          <button id="btnMathHostWrong" class="py-3 px-6 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-bold text-sm shadow-md flex items-center gap-2">
+            <i class="fa-solid fa-xmark"></i> SAI / QUÁ GIỜ
+          </button>
+        </div>
+      </div>
+
+      <!-- 8B. TEAM NAME CHALLENGE VIEW (BẮN TÊN ĐỒNG ĐỘI - 10 GIÂY) -->
+      <div id="viewTeamNameChallenge" class="hidden w-full max-w-2xl text-center glass-panel p-8 md:p-10 rounded-3xl border-2 border-emerald-400 shadow-xl space-y-6 bg-white">
+        <div class="space-y-1.5">
+          <span class="px-4 py-1 rounded-full text-xs font-black uppercase tracking-wider bg-emerald-100 text-emerald-800 border border-emerald-300">
+            🎯 THỬ THÁCH ĐỒNG ĐỘI (10 GIÂY)
+          </span>
+          <h3 class="text-3xl font-black bungee-font text-slate-900">BẮN TÊN ĐỒNG ĐỘI</h3>
+          <p class="text-slate-600 text-sm">
+            Thí sinh <span id="teamNamePickerName" class="font-bold text-indigo-600">...</span> của <span id="teamNameTeamName" class="font-bold text-amber-600">...</span> phải đọc to và chính xác họ và tên tất cả thành viên trong nhóm mình!
+          </p>
+        </div>
+
+        <!-- 10S COUNTDOWN TIMER SECTION -->
+        <div class="p-4 rounded-2xl bg-rose-50 border-2 border-rose-300 text-center space-y-1">
+          <div class="text-5xl font-black bungee-font text-rose-600" id="teamNameTimerText">10.0s</div>
+          <p class="text-xs font-bold uppercase text-rose-700">HÃY ĐỌC HẾT TÊN THÀNH VIÊN TRƯỚC KHI HẾT 10 GIÂY!</p>
+        </div>
+
+        <!-- Team Members List Box for Host/Teacher Verification -->
+        <div class="p-5 rounded-2xl bg-slate-50 border border-slate-200 text-left space-y-3 max-w-md mx-auto">
+          <div class="flex items-center justify-between border-b border-slate-200 pb-2">
+            <span class="text-xs uppercase font-extrabold text-slate-600">DANH SÁCH THÀNH VIÊN ĐỂ ĐỐI CHIẾU:</span>
+            <span id="teamMemberCount" class="text-xs font-bold text-indigo-600">0 bạn</span>
+          </div>
+          <ul id="teamMemberList" class="space-y-1.5 max-h-48 overflow-y-auto pr-1">
+            <!-- Dynamically rendered -->
+          </ul>
+        </div>
+
+        <div class="flex justify-center gap-3 pt-3 border-t border-slate-200">
+          <button id="btnTeamNameCorrect" class="py-3 px-6 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm shadow-md flex items-center gap-2">
+            <i class="fa-solid fa-check"></i> ĐỌC ĐÚNG TẤT CẢ (+3Đ NHÓM)
+          </button>
+          <button id="btnTeamNameWrong" class="py-3 px-6 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-bold text-sm shadow-md flex items-center gap-2">
+            <i class="fa-solid fa-xmark"></i> CHƯA ĐÚNG / QUÁ GIỜ
+          </button>
+        </div>
+      </div>
+
+      <!-- 9. POST GAME / LEADERBOARD & SHOP -->
+      <div id="viewPostGame" class="hidden w-full max-w-5xl space-y-6">
+        <!-- 3 TABS: NHÓM, CÁ NHÂN MVP, SHOP -->
+        <div class="flex justify-center gap-3 border-b border-slate-200 pb-4">
+          <button id="tabBtnLeaderboard" class="py-3 px-6 rounded-2xl font-black text-xs md:text-sm bungee-font transition bg-amber-500 text-white shadow-md flex items-center gap-2">
+            <i class="fa-solid fa-users"></i>
+            <span>🏆 BXH NHÓM</span>
+          </button>
+          <button id="tabBtnIndiv" class="py-3 px-6 rounded-2xl font-black text-xs md:text-sm bungee-font transition bg-slate-100 text-slate-700 hover:bg-slate-200 flex items-center gap-2">
+            <i class="fa-solid fa-crown text-amber-500"></i>
+            <span>👑 BXH CÁ NHÂN (MVP)</span>
+          </button>
+          <button id="tabBtnShop" class="py-3 px-6 rounded-2xl font-black text-xs md:text-sm bungee-font transition bg-slate-100 text-slate-700 hover:bg-slate-200 flex items-center gap-2">
+            <i class="fa-solid fa-store text-indigo-500"></i>
+            <span>🛍️ CỬA HÀNG ĐỔI QUÀ</span>
+          </button>
+        </div>
+
+        <!-- TAB 1: PODIUM NHÓM (TOP 3) -->
+        <div id="tabContentLeaderboard" class="space-y-8">
+          <div class="text-center space-y-1">
+            <h2 class="text-4xl font-black bungee-font text-slate-900">VINH DANH TẬP THỂ XUẤT SẮC</h2>
+            <p class="text-slate-600 text-sm">Bảng xếp hạng tổng điểm 7 nhóm thi đấu!</p>
+          </div>
+
+          <div class="grid grid-cols-3 gap-4 items-end max-w-2xl mx-auto pt-8 pb-4 text-center">
+            <!-- Rank 2 -->
+            <div class="flex flex-col items-center">
+              <div class="w-14 h-14 rounded-full bg-slate-300 text-slate-900 font-black text-xl flex items-center justify-center border-4 border-white mb-2 shadow-md">
+                2
+              </div>
+              <span id="rank2TeamName" class="font-bold text-slate-800 text-sm">Nhóm 2</span>
+              <span id="rank2TeamScore" class="text-xs text-amber-600 font-bold">0đ</span>
+              <div class="w-full h-32 bg-gradient-to-t from-slate-400 to-slate-300 rounded-t-2xl mt-2 flex items-center justify-center font-black text-2xl text-slate-800 shadow-md">
+                Á QUÂN
+              </div>
+            </div>
+
+            <!-- Rank 1 -->
+            <div class="flex flex-col items-center">
+              <div class="w-20 h-20 rounded-full bg-amber-400 text-slate-900 font-black text-3xl flex items-center justify-center border-4 border-yellow-200 mb-2 shadow-xl animate-bounce">
+                👑
+              </div>
+              <span id="rank1TeamName" class="font-extrabold text-amber-700 text-base">Nhóm 1</span>
+              <span id="rank1TeamScore" class="text-sm text-amber-700 font-black">0đ</span>
+              <div class="w-full h-44 bg-gradient-to-t from-amber-500 to-yellow-400 rounded-t-2xl mt-2 flex items-center justify-center font-black text-3xl text-white shadow-xl">
+                QUÁN QUÂN
+              </div>
+            </div>
+
+            <!-- Rank 3 -->
+            <div class="flex flex-col items-center">
+              <div class="w-14 h-14 rounded-full bg-amber-700 text-amber-100 font-black text-xl flex items-center justify-center border-4 border-amber-600 mb-2 shadow-md">
+                3
+              </div>
+              <span id="rank3TeamName" class="font-bold text-slate-800 text-sm">Nhóm 3</span>
+              <span id="rank3TeamScore" class="text-xs text-amber-600 font-bold">0đ</span>
+              <div class="w-full h-24 bg-gradient-to-t from-amber-700 to-amber-600 rounded-t-2xl mt-2 flex items-center justify-center font-black text-xl text-amber-100 shadow-md">
+                HẠNG 3
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- TAB 2: PODIUM CÁ NHÂN MVP (HOÀNH TRÁNG NHƯ NHÓM) -->
+        <div id="tabContentIndiv" class="hidden space-y-8">
+          <div class="text-center space-y-1">
+            <h2 class="text-4xl font-black bungee-font text-slate-900">👑 MVP CÁ NHÂN XUẤT SẮC NHẤT</h2>
+            <p class="text-slate-600 text-sm">Vinh danh các chiến thần cướp chuông và trả lời xuất sắc nhất lớp!</p>
+          </div>
+
+          <!-- PODIUM TOP 3 INDIVIDUALS -->
+          <div class="grid grid-cols-3 gap-4 items-end max-w-2xl mx-auto pt-8 pb-4 text-center">
+            <!-- Rank 2 Indiv -->
+            <div class="flex flex-col items-center">
+              <div class="w-14 h-14 rounded-full bg-slate-200 text-slate-800 font-black text-xl flex items-center justify-center border-4 border-white mb-2 shadow-md">
+                🥈
+              </div>
+              <span id="rank2IndivName" class="font-bold text-slate-800 text-sm">Học sinh 2</span>
+              <span id="rank2IndivTeam" class="text-[11px] text-slate-400">Nhóm 2</span>
+              <span id="rank2IndivScore" class="text-xs text-indigo-600 font-black">0 điểm</span>
+              <div class="w-full h-32 bg-gradient-to-t from-blue-300 to-indigo-200 rounded-t-2xl mt-2 flex items-center justify-center font-black text-xl text-indigo-800 shadow-md">
+                Á QUÂN
+              </div>
+            </div>
+
+            <!-- Rank 1 Indiv (MVP King) -->
+            <div class="flex flex-col items-center">
+              <div class="w-20 h-20 rounded-full bg-gradient-to-br from-yellow-300 to-amber-500 text-slate-900 font-black text-3xl flex items-center justify-center border-4 border-yellow-100 mb-2 shadow-xl animate-bounce">
+                👑
+              </div>
+              <span id="rank1IndivName" class="font-black text-amber-700 text-base">Học sinh 1</span>
+              <span id="rank1IndivTeam" class="text-xs text-amber-600 font-bold">Nhóm 1</span>
+              <span id="rank1IndivScore" class="text-sm text-indigo-700 font-black">0 điểm</span>
+              <div class="w-full h-44 bg-gradient-to-t from-amber-500 via-orange-400 to-yellow-300 rounded-t-2xl mt-2 flex flex-col items-center justify-center font-black text-2xl text-white shadow-xl">
+                <span>QUÁN QUÂN</span>
+                <span class="text-xs tracking-wider opacity-90">🏆 MVP TRẬN ĐẤU</span>
+              </div>
+            </div>
+
+            <!-- Rank 3 Indiv -->
+            <div class="flex flex-col items-center">
+              <div class="w-14 h-14 rounded-full bg-amber-700 text-amber-100 font-black text-xl flex items-center justify-center border-4 border-amber-600 mb-2 shadow-md">
+                🥉
+              </div>
+              <span id="rank3IndivName" class="font-bold text-slate-800 text-sm">Học sinh 3</span>
+              <span id="rank3IndivTeam" class="text-[11px] text-slate-400">Nhóm 3</span>
+              <span id="rank3IndivScore" class="text-xs text-indigo-600 font-black">0 điểm</span>
+              <div class="w-full h-24 bg-gradient-to-t from-amber-700 to-amber-600 rounded-t-2xl mt-2 flex items-center justify-center font-black text-xl text-amber-100 shadow-md">
+                HẠNG 3
+              </div>
+            </div>
+          </div>
+
+          <!-- ALL OTHER INDIVIDUALS LIST -->
+          <div class="max-w-xl mx-auto glass-panel p-5 rounded-2xl border border-slate-200 bg-white">
+            <h4 class="text-xs font-bold uppercase tracking-wider text-slate-500 mb-3 text-center">
+              🌟 BẢNG TỔNG SẮP CÁ NHÂN TOÀN LỚP
+            </h4>
+            <div id="topIndividualsList" class="space-y-2">
+              <!-- Dynamically populated -->
+            </div>
+          </div>
+        </div>
+
+        <!-- TAB 3: SHOP REWARD -->
+        <div id="tabContentShop" class="hidden space-y-6">
+          <div class="text-center space-y-1">
+            <h3 class="text-3xl font-black bungee-font text-slate-900">CỬA HÀNG ĐỔI QUÀ LỚP HỌC</h3>
+            <p class="text-slate-600 text-sm">
+              Điểm số được quy đổi: <strong class="text-indigo-600">1 Điểm = 100 Xu</strong>. Đại diện có điểm cao nhất của từng tổ sẽ dùng điện thoại để bấm đổi quà!
+            </p>
+          </div>
+
+          <div id="shopGrid" class="grid grid-cols-1 md:grid-cols-3 gap-4 max-w-4xl mx-auto">
+            <!-- Dynamically populated shop rewards -->
+          </div>
+        </div>
+      </div>
+
+    </main>
+
+    <!-- 1/5 RIGHT SIDEBAR: 7 TEAMS (WHITE THEME) -->
+    <aside class="w-1/5 h-full bg-white border-l border-slate-200 p-4 flex flex-col justify-between overflow-y-auto z-20 shadow-sm">
+      <div class="space-y-4">
+        <div class="flex items-center justify-between border-b border-slate-200 pb-3">
+          <h2 class="text-xs font-black uppercase tracking-wider text-slate-700 flex items-center gap-1.5">
+            <i class="fa-solid fa-trophy text-amber-500"></i> BẢNG ĐIỂM 7 NHÓM
+          </h2>
+          <span class="text-[10px] bg-indigo-50 text-indigo-700 px-2 py-0.5 rounded font-bold border border-indigo-200">REALTIME</span>
+        </div>
+
+        <div id="sidebarTeamsList" class="space-y-2.5">
+          <!-- Dynamically filled with 7 teams -->
+        </div>
+      </div>
+
+      <!-- Host Action Controls -->
+      <div class="pt-4 border-t border-slate-200 space-y-2">
+        <button id="btnHostNextQuestion" class="w-full py-2.5 px-4 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs shadow flex items-center justify-center gap-1.5">
+          <span>CÂU HỎI KẾ TIẾP</span>
+          <i class="fa-solid fa-forward-step"></i>
+        </button>
+        <button id="btnHostReopen" class="w-full py-2 px-4 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-bold text-xs flex items-center justify-center gap-1.5">
+          <i class="fa-solid fa-bell"></i>
+          <span>MỞ LẠI CHUÔNG</span>
+        </button>
+      </div>
+    </aside>
+
+  </div>
+
+  <!-- Thanos Overlay -->
+  <div id="thanosOverlay" class="hidden fixed inset-0 z-50 bg-purple-900/80 backdrop-blur-md flex flex-col items-center justify-center text-center p-6 space-y-4 text-white">
+    <div class="text-8xl animate-bounce">🧤</div>
+    <h2 class="text-4xl md:text-6xl font-black bungee-font text-amber-300">
+      CÚ BÚNG TAY CỦA THANOS!
+    </h2>
+    <p class="text-lg md:text-2xl max-w-xl font-medium">
+      "Ta chính là điều tất yếu..." Toàn bộ điểm cá nhân của cả lớp vừa tan biến thành cát bụi!
+    </p>
+  </div>
+
+  <!-- Announcement Modal -->
+  <div id="announcementModal" class="hidden fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="glass-panel p-6 rounded-3xl max-w-md w-full text-center space-y-4 border border-slate-200 bg-white shadow-2xl">
+      <div class="text-4xl text-amber-500" id="announcementIcon">📢</div>
+      <h3 class="text-2xl font-black text-slate-900" id="announcementTitle">Thông báo</h3>
+      <p class="text-sm text-slate-600" id="announcementDesc">Nội dung</p>
+      <button id="btnDismissAnnouncement" class="py-2.5 px-6 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-sm">
+        ĐÓNG
+      </button>
+    </div>
+  </div>
+
+  <!-- Scripts -->
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="/js/sound.js"></script>
+  <script src="/js/host.js"></script>
+</body>
+</html>
