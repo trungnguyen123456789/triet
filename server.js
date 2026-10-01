@@ -63,12 +63,26 @@ function shuffleArray(array) {
   return arr;
 }
 
-let questions = shuffleArray(baseQuestions);
+let questions = [];
 
 function randomizeQuestions() {
-  questions = shuffleArray(baseQuestions);
-  console.log(`[Quiz] 🎲 Đã xáo trộn ngẫu nhiên thứ tự ${questions.length} câu hỏi!`);
+  // Câu 1 đến 21 là các câu hỏi Triết học Mác - Lênin
+  // Câu 22 đến 30 là các câu cho điểm / đời sống lớp học (không liên quan triết)
+  const philo = shuffleArray(baseQuestions.filter(q => q.id <= 21));
+  const bonus = shuffleArray(baseQuestions.filter(q => q.id > 21));
+
+  // 10 câu đầu tiên (Câu 1 - 10) luôn luôn là các câu hỏi Triết học ngẫu nhiên
+  const first10Philo = philo.slice(0, 10);
+
+  // 20 câu sau (từ Câu 11 trở đi): 11 câu Triết còn lại + 9 câu cho điểm, xáo trộn ngẫu nhiên
+  const remainingQuestions = shuffleArray([...philo.slice(10), ...bonus]);
+
+  questions = [...first10Philo, ...remainingQuestions];
+  console.log(`[Quiz] 🎲 Đã tạo đề 30 câu: 10 câu đầu 100% Triết học, các câu cho điểm chỉ xuất hiện sau câu thứ 10!`);
+  console.log(`[Quiz] 📋 Thứ tự ID 30 câu:`, questions.map(q => q.id));
 }
+
+randomizeQuestions();
 
 try {
   if (fs.existsSync(rewardsInSubdir)) {
@@ -301,7 +315,7 @@ const luckyPool = [
   { code: 'ITEM_EQUALIZE', title: 'Thẻ Cào Bằng Thế Sự', desc: 'Lưu túi đồ: Chủ động kích hoạt tổng 7 đội chia đều cho 7!', icon: '⚖️' },
   { code: 'ITEM_SHIELD', title: 'Khiên Bảo Hộ', desc: 'Lưu túi đồ: Chủ động trang bị miễn trừ 1 lần phạt rương xui xẻo!', icon: '🛡️' },
   { code: 'ITEM_SILENCE', title: 'Thẻ Cấm Ngôn', desc: 'Lưu túi đồ: Khóa quyền bấm chuông 1 nhóm trong 1 câu!', icon: '🤐' },
-  { code: 'ITEM_THANOS', title: 'Cú Búng Tay Của Thanos', desc: 'Lưu túi đồ: Xóa sạch toàn bộ điểm cá nhân của cả lớp về 0!', icon: '🧤' },
+  { code: 'ITEM_THANOS', title: 'Cú Búng Tay Của Thanos', desc: 'Lưu túi đồ: Búng tay xóa sạch toàn bộ điểm cá nhân của cả lớp (tất cả 7 nhóm) về 0đ!', icon: '🧤' },
   { code: 'ITEM_SKIP_PENALTY', title: 'Thẻ Bỏ Qua Lượt (Miễn Hình Phạt)', desc: 'Lưu túi đồ: Dùng khi nhóm dính hình phạt nhảy cover để được miễn trừ biểu diễn mà không bị trừ điểm!', icon: '⏭️' },
   { code: 'ITEM_REFLECT', title: 'Thẻ "Gậy Ông Đập Lưng Ông"', desc: 'Lưu túi đồ: Tự động phản đòn 100% khi bị nhóm khác dùng Thẻ Cấm Ngôn, Cướp Điểm hoặc Ép Phạt!', icon: '🪞' },
   { code: 'ITEM_50_50', title: 'Thẻ "Nhìn Trộm Đề" (50/50)', desc: 'Lưu túi đồ: Loại bỏ ngay 2 đáp án sai trong câu hỏi, chỉ còn 2 lựa chọn (tỉ lệ trúng 50%)!', icon: '🔍' },
@@ -344,9 +358,18 @@ const unluckyPool = [
 
 function generateChests(isLucky) {
   const pool = isLucky ? luckyPool : unluckyPool;
+  const isLateGame = (!isLucky && gameState.currentQuestionIndex >= 18 && pendingActionQueue.length > 0);
   const chests = [];
+
   for (let i = 1; i <= 20; i++) {
-    const reward = pool[Math.floor(Math.random() * pool.length)];
+    let reward;
+    if (isLateGame && (i % 2 === 0)) {
+      // Sau câu 18: Tăng tỉ lệ rương hành động lên 50% để đảm bảo tất cả đều xuất hiện
+      reward = { ...ACTION_PENALTY_POOL[Math.floor(Math.random() * ACTION_PENALTY_POOL.length)] };
+    } else {
+      reward = { ...pool[Math.floor(Math.random() * pool.length)] };
+    }
+
     chests.push({
       id: i,
       opened: false,
@@ -783,9 +806,18 @@ io.on('connection', (socket) => {
 
     // ACTION PENALTY QUEUE CONTROL (1st is Rap, 2nd is Muốn Em Đau, rest random)
     if (chest.type === 'UNLUCKY') {
+      const isLateGame = (gameState.currentQuestionIndex >= 18);
+
+      // KỂ TỪ SAU CÂU 18: Tăng mạnh tỉ lệ ra thử thách hành động (85%) nếu vẫn còn bài trong queue
+      if (isLateGame && pendingActionQueue.length > 0 && unluckyTurnsSinceLastAction >= 1) {
+        if (Math.random() < 0.85) {
+          reward.isAction = true;
+        }
+      }
+
       if (reward.isAction) {
-        // Tránh 2 câu liên tiếp dồn dập đều dính nhảy/rap
-        if (unluckyTurnsSinceLastAction < 1) {
+        // Tránh 2 câu liên tiếp dồn dập đều dính nhảy/rap (trừ khi vào 3 câu cuối)
+        if (unluckyTurnsSinceLastAction < 1 && gameState.currentQuestionIndex < 27) {
           const nonActionPool = unluckyPool.filter(r => !r.isAction);
           reward = { ...nonActionPool[Math.floor(Math.random() * nonActionPool.length)] };
           chest.reward = reward;
@@ -798,6 +830,7 @@ io.on('connection', (socket) => {
           reward = { ...nextAction };
           chest.reward = reward;
           unluckyTurnsSinceLastAction = 0;
+          console.log(`[Quiz] ⚡ Kích hoạt thử thách hành động: "${reward.title}" (Còn lại ${pendingActionQueue.length} thử thách trong queue)`);
         }
       } else {
         unluckyTurnsSinceLastAction++;
@@ -2008,10 +2041,18 @@ io.on('connection', (socket) => {
       }
 
       case 'ITEM_THANOS':
-        Object.values(gameState.players).forEach(p => { p.score = 0; });
+        Object.values(gameState.players).forEach(p => {
+          p.score = 0;
+          if (p.persistentKey && persistentPlayers[p.persistentKey]) {
+            persistentPlayers[p.persistentKey].score = 0;
+          }
+        });
+        Object.values(persistentPlayers).forEach(p => {
+          p.score = 0;
+        });
         io.emit('game:thanos_snap', {
           title: '🧤 CÚ BÚNG TAY CỦA THANOS!',
-          desc: `${player.name} (${team.name}) đã búng tay! Toàn bộ điểm cá nhân của cả lớp bay màu về 0!`,
+          desc: `${player.name} (${team.name}) đã búng tay! Toàn bộ điểm cá nhân của cả lớp (tất cả 7 nhóm) bay màu về 0đ!`,
           soundType: 'bad',
           isBad: true
         });
