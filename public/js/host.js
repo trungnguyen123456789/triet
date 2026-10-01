@@ -4,6 +4,60 @@ const socket = io();
 let currentGameState = null;
 let soundEnabled = true;
 
+// ==================== HOST SECURITY PIN PROTECTION ====================
+const HOST_PIN = '4829';
+const hostPinOverlay = document.getElementById('hostPinOverlay');
+const inputHostPin = document.getElementById('inputHostPin');
+const btnSubmitHostPin = document.getElementById('btnSubmitHostPin');
+const pinErrorMessage = document.getElementById('pinErrorMessage');
+
+function verifyHostPin() {
+  const enteredPin = inputHostPin.value.trim();
+  if (enteredPin === HOST_PIN) {
+    sessionStorage.setItem('host_pin_authenticated', HOST_PIN);
+    if (pinErrorMessage) pinErrorMessage.classList.add('hidden');
+    if (hostPinOverlay) {
+      hostPinOverlay.classList.add('opacity-0');
+      setTimeout(() => hostPinOverlay.classList.add('hidden'), 300);
+    }
+    socket.emit('host:authenticate', { pin: HOST_PIN });
+    if (window.gameSound && window.gameSound.playGood) window.gameSound.playGood();
+  } else {
+    if (pinErrorMessage) pinErrorMessage.classList.remove('hidden');
+    inputHostPin.classList.add('border-rose-500');
+    inputHostPin.value = '';
+    inputHostPin.focus();
+  }
+}
+
+function checkHostAuth() {
+  const savedPin = sessionStorage.getItem('host_pin_authenticated');
+  if (savedPin === HOST_PIN) {
+    if (hostPinOverlay) hostPinOverlay.classList.add('hidden');
+    socket.emit('host:authenticate', { pin: HOST_PIN });
+  } else {
+    if (hostPinOverlay) hostPinOverlay.classList.remove('hidden');
+    if (inputHostPin) inputHostPin.focus();
+  }
+}
+
+if (btnSubmitHostPin && inputHostPin) {
+  btnSubmitHostPin.addEventListener('click', verifyHostPin);
+  inputHostPin.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') verifyHostPin();
+  });
+}
+
+// Auto check auth on start & reconnect
+checkHostAuth();
+socket.on('connect', () => {
+  const savedPin = sessionStorage.getItem('host_pin_authenticated');
+  if (savedPin === HOST_PIN) {
+    socket.emit('host:authenticate', { pin: HOST_PIN });
+  }
+});
+// ======================================================================
+
 // DOM Elements
 const views = {
   lobby: document.getElementById('viewLobby'),

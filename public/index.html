@@ -15,6 +15,33 @@
 </head>
 <body class="flex flex-col h-screen overflow-hidden text-slate-800 bg-slate-50">
 
+  <!-- Host PIN Security Lock Overlay -->
+  <div id="hostPinOverlay" class="fixed inset-0 z-[9999] bg-slate-900/95 backdrop-blur-xl flex flex-col items-center justify-center p-6 text-white transition-opacity duration-300">
+    <div class="w-full max-w-sm bg-slate-800/95 border border-slate-700/80 rounded-3xl p-8 shadow-2xl text-center space-y-6">
+      <div class="w-16 h-16 rounded-2xl bg-gradient-to-tr from-amber-500 to-rose-500 flex items-center justify-center text-3xl mx-auto shadow-lg shadow-rose-500/20">
+        <i class="fa-solid fa-lock"></i>
+      </div>
+      <div>
+        <h2 class="text-xl font-black tracking-wide bungee-font text-white">XÁC MINH MÁY CHỦ (HOST)</h2>
+        <p class="text-xs text-slate-400 mt-1">Màn hình máy chiếu chỉ dành riêng cho Quản trò. Vui lòng nhập mã PIN bảo mật để mở khóa điều khiển.</p>
+      </div>
+      
+      <div class="space-y-3">
+        <input type="password" id="inputHostPin" maxlength="6" inputmode="numeric" placeholder="••••" class="w-full py-3.5 px-4 bg-slate-900 border-2 border-slate-600 rounded-2xl text-center text-3xl font-black tracking-[0.5em] text-amber-400 focus:outline-none focus:border-amber-500 transition shadow-inner">
+        <p id="pinErrorMessage" class="text-xs text-rose-400 font-bold hidden">❌ Mã PIN không chính xác! Vui lòng thử lại.</p>
+      </div>
+
+      <div class="space-y-3">
+        <button id="btnSubmitHostPin" class="w-full py-3 rounded-2xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white font-black text-sm shadow-lg shadow-orange-500/25 active:scale-95 transition">
+          MỞ KHÓA MÁY CHỦ 🔓
+        </button>
+        <a href="/play.html" class="inline-block text-xs text-slate-400 hover:text-white underline pt-1 transition">
+          Bạn là người chơi? Chuyển sang màn hình điện thoại 👉
+        </a>
+      </div>
+    </div>
+  </div>
+
   <!-- Top Header Bar (White Theme) -->
   <header class="h-16 bg-white/95 backdrop-blur-md border-b border-slate-200 flex items-center justify-between px-6 z-30 shadow-sm">
     <div class="flex items-center gap-3">
