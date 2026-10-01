@@ -585,10 +585,31 @@ function renderMobilePenalty(penalty) {
   const descEl = document.getElementById('mPenaltyDesc');
   const actionBtns = document.getElementById('mPenaltyActionButtons');
   const performingBox = document.getElementById('mPenaltyPerformingBox');
+  const btnAccept = document.getElementById('btnMobileAcceptPenalty');
+  const isNonVideo = !penalty.mediaId || penalty.mediaType === 'none' || penalty.type === 'ACTION_CONFESSION' || penalty.code === 'ACTION_CONFESSION';
 
   if (iconEl) iconEl.textContent = penalty.icon || '💃';
   if (titleEl) titleEl.textContent = penalty.title;
   if (descEl) descEl.textContent = penalty.desc;
+
+  if (btnAccept) {
+    const btnSpan = btnAccept.querySelector('span');
+    if (btnSpan) {
+      btnSpan.textContent = isNonVideo ? 'TÔI ĐỒNG Ý THỰC HIỆN 💬' : 'TÔI ĐỒNG Ý BIỂU DIỄN 🎬';
+    }
+  }
+
+  if (performingBox) {
+    const h4 = performingBox.querySelector('h4');
+    const p = performingBox.querySelector('p');
+    if (isNonVideo) {
+      if (h4) h4.textContent = 'HÃY BƯỚC LÊN BỤC GIẢNG!';
+      if (p) p.textContent = 'Hãy tự tin bước lên bục giảng và thực hiện thử thách trước cả lớp nhé!';
+    } else {
+      if (h4) h4.textContent = 'ĐANG PHÁT VIDEO TRÊN MÁY CHIẾU!';
+      if (p) p.textContent = 'Hãy tự tin bước lên bục giảng và biểu diễn theo nhịp điệu nhé!';
+    }
+  }
 
   if (penalty.isPerforming) {
     if (actionBtns) actionBtns.classList.add('hidden');

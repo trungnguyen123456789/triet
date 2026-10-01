@@ -537,11 +537,13 @@ function startActionPenaltyCountdown(penalty, mediaId) {
   const countdownBox = document.getElementById('penaltyCountdownBox');
   const countdownNum = document.getElementById('penaltyCountdownNum');
   const videoContainer = document.getElementById('penaltyVideoContainer');
+  const nonVideoBox = document.getElementById('penaltyNonVideoBox');
   const frame = document.getElementById('penaltyYoutubeFrame');
   const tiktokLink = document.getElementById('tiktokLinkContainer');
 
   if (waitingBox) waitingBox.classList.add('hidden');
   if (videoContainer) videoContainer.classList.add('hidden');
+  if (nonVideoBox) nonVideoBox.classList.add('hidden');
   if (tiktokLink) tiktokLink.classList.add('hidden');
   if (countdownBox) countdownBox.classList.remove('hidden');
 
@@ -565,15 +567,33 @@ function startActionPenaltyCountdown(penalty, mediaId) {
       actionPenaltyTimer = null;
 
       if (countdownBox) countdownBox.classList.add('hidden');
-      if (videoContainer) videoContainer.classList.remove('hidden');
 
-      if (penalty.mediaType === 'tiktok' && mediaId) {
+      const isNonVideo = !mediaId || penalty.mediaType === 'none' || penalty.type === 'ACTION_CONFESSION' || penalty.code === 'ACTION_CONFESSION';
+
+      if (isNonVideo) {
+        if (videoContainer) videoContainer.classList.add('hidden');
+        if (tiktokLink) tiktokLink.classList.add('hidden');
+        if (frame) frame.src = '';
+        if (nonVideoBox) {
+          nonVideoBox.classList.remove('hidden');
+          const nonVideoIcon = document.getElementById('penaltyNonVideoIcon');
+          const nonVideoTitle = document.getElementById('penaltyNonVideoTitle');
+          const nonVideoInstr = document.getElementById('penaltyNonVideoInstruction');
+          if (nonVideoIcon) nonVideoIcon.textContent = penalty.icon || '💌';
+          if (nonVideoTitle) nonVideoTitle.textContent = (penalty.title || 'HÃY BƯỚC LÊN BỤC GIẢNG!').toUpperCase();
+          if (nonVideoInstr) nonVideoInstr.textContent = penalty.desc || 'Thực hiện yêu cầu thử thách trước toàn lớp!';
+        }
+      } else if (penalty.mediaType === 'tiktok' && mediaId) {
+        if (nonVideoBox) nonVideoBox.classList.add('hidden');
+        if (videoContainer) videoContainer.classList.remove('hidden');
         if (tiktokLink) tiktokLink.classList.remove('hidden');
         const tiktokEmbedUrl = `https://www.tiktok.com/embed/v2/${mediaId}`;
         if (!frame.src.includes(mediaId)) {
           frame.src = tiktokEmbedUrl;
         }
       } else if (mediaId) {
+        if (nonVideoBox) nonVideoBox.classList.add('hidden');
+        if (videoContainer) videoContainer.classList.remove('hidden');
         if (tiktokLink) tiktokLink.classList.add('hidden');
         const embedUrl = `https://www.youtube-nocookie.com/embed/${mediaId}?autoplay=1&enablejsapi=1`;
         if (!frame.src.includes(mediaId)) {
@@ -594,13 +614,19 @@ function renderActionPenalty(penalty) {
   const waitingBox = document.getElementById('penaltyWaitingBox');
   const countdownBox = document.getElementById('penaltyCountdownBox');
   const videoContainer = document.getElementById('penaltyVideoContainer');
+  const nonVideoBox = document.getElementById('penaltyNonVideoBox');
   const frame = document.getElementById('penaltyYoutubeFrame');
   const tiktokLink = document.getElementById('tiktokLinkContainer');
   const judgeSuccessText = document.getElementById('judgeSuccessText');
   const waitingText = document.getElementById('penaltyWaitingText');
 
+  const mediaId = penalty.mediaId || (penalty.youtubeIds && penalty.youtubeIds[0]);
+  const isNonVideo = !mediaId || penalty.mediaType === 'none' || penalty.type === 'ACTION_CONFESSION' || penalty.code === 'ACTION_CONFESSION';
+
   if (waitingText) {
-    waitingText.textContent = `Đang đợi ${penalty.playerName} (${penalty.teamName}) nhấn "TÔI SẼ BIỂU DIỄN" trên điện thoại...`;
+    waitingText.textContent = isNonVideo
+      ? `Đang đợi ${penalty.playerName} (${penalty.teamName}) xác nhận thử thách trên điện thoại...`
+      : `Đang đợi ${penalty.playerName} (${penalty.teamName}) nhấn "TÔI SẼ BIỂU DIỄN" trên điện thoại...`;
   }
 
   if (judgeSuccessText) {
@@ -613,7 +639,6 @@ function renderActionPenalty(penalty) {
     }
   }
 
-  const mediaId = penalty.mediaId || (penalty.youtubeIds && penalty.youtubeIds[0]);
   let videoUrl = 'https://www.youtube.com';
   if (penalty.mediaType === 'tiktok' || penalty.type === 'ACTION_TIKTOK_GROUP') {
     videoUrl = 'https://www.tiktok.com/@thienphuc0331/video/7559228650248260882';
@@ -622,19 +647,29 @@ function renderActionPenalty(penalty) {
   }
 
   const btnHostOpenVideoNewTab = document.getElementById('btnHostOpenVideoNewTab');
-  if (btnHostOpenVideoNewTab) btnHostOpenVideoNewTab.href = videoUrl;
+  if (btnHostOpenVideoNewTab) {
+    if (isNonVideo) {
+      btnHostOpenVideoNewTab.classList.add('hidden');
+    } else {
+      btnHostOpenVideoNewTab.classList.remove('hidden');
+      btnHostOpenVideoNewTab.href = videoUrl;
+    }
+  }
 
   const btnVideoPlayingExternal = document.getElementById('btnVideoPlayingExternal');
   if (btnVideoPlayingExternal) btnVideoPlayingExternal.href = videoUrl;
 
   const btnHostStartPerformance = document.getElementById('btnHostStartPerformance');
   if (btnHostStartPerformance) {
+    btnHostStartPerformance.innerHTML = isNonVideo
+      ? '<i class="fa-solid fa-play"></i> <span>BẮT ĐẦU THỬ THÁCH (HOST)</span>'
+      : '<i class="fa-solid fa-play"></i> <span>BẮT ĐẦU / MỞ VIDEO (HOST)</span>';
     btnHostStartPerformance.onclick = () => {
       socket.emit('host:start_action_performance');
     };
   }
 
-  const penaltyKey = `${penalty.playerId}_${penalty.type}_${mediaId}`;
+  const penaltyKey = `${penalty.playerId}_${penalty.type}_${mediaId || 'novideo'}`;
 
   if (currentActionPenaltyKey !== penaltyKey) {
     currentActionPenaltyKey = penaltyKey;
@@ -644,7 +679,7 @@ function renderActionPenalty(penalty) {
     }
   }
 
-  // Not confirmed yet: show waiting screen, hide video & countdown
+  // Not confirmed yet: show waiting screen, hide video & countdown & nonVideoBox
   if (!penalty.isPerforming) {
     if (actionPenaltyTimer) {
       clearInterval(actionPenaltyTimer);
@@ -653,6 +688,7 @@ function renderActionPenalty(penalty) {
     if (waitingBox) waitingBox.classList.remove('hidden');
     if (countdownBox) countdownBox.classList.add('hidden');
     if (videoContainer) videoContainer.classList.add('hidden');
+    if (nonVideoBox) nonVideoBox.classList.add('hidden');
     if (tiktokLink) tiktokLink.classList.add('hidden');
     if (frame) frame.src = '';
     return;
@@ -661,8 +697,11 @@ function renderActionPenalty(penalty) {
   // If already confirmed:
   if (waitingBox) waitingBox.classList.add('hidden');
 
-  // If video is already showing and loaded, don't restart countdown
-  if (videoContainer && !videoContainer.classList.contains('hidden') && frame && frame.src) {
+  // If already showing on screen, don't restart countdown
+  if (isNonVideo && nonVideoBox && !nonVideoBox.classList.contains('hidden')) {
+    return;
+  }
+  if (!isNonVideo && videoContainer && !videoContainer.classList.contains('hidden') && frame && frame.src) {
     return;
   }
 
@@ -671,7 +710,7 @@ function renderActionPenalty(penalty) {
     return;
   }
 
-  // Start 3-2-1 countdown then show video!
+  // Start 3-2-1 countdown then show stage/video!
   startActionPenaltyCountdown(penalty, mediaId);
 }
 
