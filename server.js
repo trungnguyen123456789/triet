@@ -781,27 +781,26 @@ io.on('connection', (socket) => {
     const activePlayer = player || gameState.players[winner.socketId] || { name: winner.playerName, score: 0 };
     const team = gameState.teams.find(t => t.id === winner.teamId);
 
-    // INTELLIGENT ACTION PENALTY PACING & ANTI-CONSECUTIVE CONTROL
+    // ACTION PENALTY QUEUE CONTROL (1st is Rap, 2nd is Muốn Em Đau, rest random)
     if (chest.type === 'UNLUCKY') {
-      const isCooldown = (unluckyTurnsSinceLastAction < 2);
-
-      if (isCooldown) {
-        // Cooldown active: MUST NOT be an action penalty to prevent consecutive actions!
-        unluckyTurnsSinceLastAction++;
-        if (reward.isAction) {
+      if (reward.isAction) {
+        // Tránh 2 câu liên tiếp dồn dập đều dính nhảy/rap
+        if (unluckyTurnsSinceLastAction < 1) {
           const nonActionPool = unluckyPool.filter(r => !r.isAction);
           reward = { ...nonActionPool[Math.floor(Math.random() * nonActionPool.length)] };
           chest.reward = reward;
+        } else {
+          // Lấy thử thách tiếp theo theo đúng thứ tự (1st luôn là Rap, 2nd luôn là Muốn Em Đau, tiếp theo random)
+          if (pendingActionQueue.length === 0) {
+            initActionQueue();
+          }
+          const nextAction = pendingActionQueue.shift();
+          reward = { ...nextAction };
+          chest.reward = reward;
+          unluckyTurnsSinceLastAction = 0;
         }
       } else {
-        // Cooldown passed: Guarantee the next unplayed cover dance / action from queue!
-        if (pendingActionQueue.length === 0) {
-          initActionQueue();
-        }
-        const nextAction = pendingActionQueue.shift();
-        reward = { ...nextAction };
-        chest.reward = reward;
-        unluckyTurnsSinceLastAction = 0; // Reset cooldown
+        unluckyTurnsSinceLastAction++;
       }
     }
 
