@@ -327,12 +327,12 @@
     "id": 28,
     "question": "Thầy Tuyến có cấp bậc quân hàm là gì?",
     "options": [
+      "Đại thần",
       "Đại tá",
       "Thượng tá",
-      "Thượng sĩ",
-      "Đại thần"
+      "Thượng sĩ"
     ],
-    "answer": 0,
+    "answer": 1,
     "explanation": "Cấp bậc quân hàm của thầy Tuyến là Đại tá!"
   },
   {

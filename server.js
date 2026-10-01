@@ -32,7 +32,7 @@ const defaultRewards = [
   { id: 104, name: "Tàu Vũ Trụ Soyuz (Trạm ISS)", price: 10000000000000000, priceFormatted: "10.000.000.000.000.000đ", pointsCost: 10000000000000, pointsFormatted: "10 Triệu Tỷ Điểm", stock: 1, icon: "🚀", image: "/img/soyuz.png", desc: "Tàu vũ trụ đưa cả nhóm lên trạm không gian quốc tế ISS, bảo hành trọn đời vũ trụ!", category: "luxury" }
 ];
 
-let questions = defaultQuestions;
+let baseQuestions = defaultQuestions;
 let rewards = defaultRewards;
 
 const questionsInSubdir = path.join(__dirname, 'data', 'questions.json');
@@ -42,15 +42,32 @@ const rewardsInRoot = path.join(__dirname, 'rewards.json');
 
 try {
   if (fs.existsSync(questionsInSubdir)) {
-    questions = JSON.parse(fs.readFileSync(questionsInSubdir, 'utf8'));
+    baseQuestions = JSON.parse(fs.readFileSync(questionsInSubdir, 'utf8'));
   } else if (fs.existsSync(questionsInRoot)) {
-    questions = JSON.parse(fs.readFileSync(questionsInRoot, 'utf8'));
+    baseQuestions = JSON.parse(fs.readFileSync(questionsInRoot, 'utf8'));
   } else {
     fs.mkdirSync(path.join(__dirname, 'data'), { recursive: true });
     fs.writeFileSync(questionsInSubdir, JSON.stringify(defaultQuestions, null, 2), 'utf8');
   }
 } catch (e) {
   console.warn('Fallback default questions:', e.message);
+}
+
+// Fisher-Yates shuffle algorithm for truly random question ordering
+function shuffleArray(array) {
+  const arr = [...array];
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+}
+
+let questions = shuffleArray(baseQuestions);
+
+function randomizeQuestions() {
+  questions = shuffleArray(baseQuestions);
+  console.log(`[Quiz] 🎲 Đã xáo trộn ngẫu nhiên thứ tự ${questions.length} câu hỏi!`);
 }
 
 try {
@@ -108,6 +125,9 @@ function createDefaultTeams() {
   }
   return teams;
 }
+
+// Persistent players storage (maintains scores & inventory across reconnects / browser refreshes)
+let persistentPlayers = {};
 
 // Game State
 let gameState = {
@@ -239,8 +259,17 @@ let pendingActionQueue = [];
 let unluckyTurnsSinceLastAction = 2; // Bắt đầu ở 2 để có thể xuất hiện khi thích hợp mà không trùng liên tiếp
 
 function initActionQueue() {
-  pendingActionQueue = [...ACTION_PENALTY_POOL].sort(() => Math.random() - 0.5);
+  const rapAction = ACTION_PENALTY_POOL.find(a => a.code === 'ACTION_RAP');
+  const tiktokAction = ACTION_PENALTY_POOL.find(a => a.code === 'ACTION_TIKTOK_GROUP');
+  const otherActions = ACTION_PENALTY_POOL.filter(a => a.code !== 'ACTION_RAP' && a.code !== 'ACTION_TIKTOK_GROUP');
+
+  // Randomly shuffle remaining actions (Ichi Ni San, Tiramisu Tóp Tóp, Catwalk, Lời Thú Tội)
+  const shuffledOthers = shuffleArray(otherActions);
+
+  // 1st is always Rap Học Đường, 2nd is always Muốn Em Đau (TikTok nhóm), then random
+  pendingActionQueue = [rapAction, tiktokAction, ...shuffledOthers].filter(Boolean);
   unluckyTurnsSinceLastAction = 2;
+  console.log('[Quiz] 🎬 Hàng đợi hình phạt hành động:', pendingActionQueue.map(a => a.title));
 }
 initActionQueue();
 
@@ -496,25 +525,63 @@ io.on('connection', (socket) => {
 
   socket.emit('game:state_update', getPublicState());
 
-  socket.on('player:join', ({ name, teamId }) => {
+  socket.on('player:join', ({ playerId, name, teamId }) => {
     if (!name || !teamId) return;
     const teamNum = parseInt(teamId, 10);
     if (teamNum < 1 || teamNum > 7) return;
 
-    gameState.players[socket.id] = {
-      id: socket.id,
-      name: name.trim().substring(0, 25),
-      teamId: teamNum,
-      score: 0,
-      inventory: []
-    };
+    const cleanName = name.trim().substring(0, 25);
+    const persistentKey = playerId || `${cleanName.toLowerCase()}_team_${teamNum}`;
+
+    if (!persistentPlayers[persistentKey]) {
+      persistentPlayers[persistentKey] = {
+        id: persistentKey,
+        socketId: socket.id,
+        persistentKey: persistentKey,
+        name: cleanName,
+        teamId: teamNum,
+        score: 0,
+        inventory: []
+      };
+    }
+
+    const reg = persistentPlayers[persistentKey];
+    reg.socketId = socket.id;
+    reg.name = cleanName;
+    reg.teamId = teamNum;
+
+    // Clean up any stale sockets pointing to this player
+    for (const [sId, p] of Object.entries(gameState.players)) {
+      if (sId !== socket.id && (p.persistentKey === persistentKey || (p.name.toLowerCase() === cleanName.toLowerCase() && p.teamId === teamNum))) {
+        delete gameState.players[sId];
+      }
+    }
+
+    gameState.players[socket.id] = reg;
+
+    // Re-link active state winner/penalty to new socket if it matches this player
+    if (gameState.buzzerWinner && (gameState.buzzerWinner.playerId === persistentKey || (gameState.buzzerWinner.playerName.toLowerCase() === cleanName.toLowerCase() && gameState.buzzerWinner.teamId === teamNum))) {
+      gameState.buzzerWinner.socketId = socket.id;
+    }
+    if (gameState.activePenalty && (gameState.activePenalty.playerId === persistentKey || (gameState.activePenalty.playerName.toLowerCase() === cleanName.toLowerCase() && gameState.activePenalty.teamId === teamNum))) {
+      gameState.activePenalty.socketId = socket.id;
+    }
+
     broadcastState();
   });
 
   // Buzzer answer selection
-  socket.on('player:buzz_answer', ({ optionIndex }) => {
+  socket.on('player:buzz_answer', ({ optionIndex, playerId, name, teamId }) => {
     if (gameState.status !== 'QUESTION') return;
-    const player = gameState.players[socket.id];
+    let player = gameState.players[socket.id];
+    if (!player && (playerId || (name && teamId))) {
+      const pKey = playerId || `${(name || '').trim().toLowerCase()}_team_${teamId}`;
+      if (persistentPlayers[pKey]) {
+        player = persistentPlayers[pKey];
+        player.socketId = socket.id;
+        gameState.players[socket.id] = player;
+      }
+    }
     if (!player) return;
 
     if (gameState.lockedTeamsForQuestion.includes(player.teamId)) {
@@ -679,17 +746,39 @@ io.on('connection', (socket) => {
   }
 
   // Pick chest
-  socket.on('player:pick_chest', ({ chestId }) => {
+  socket.on('player:pick_chest', ({ chestId, playerId, name, teamId }) => {
     if (gameState.status !== 'CHEST_SELECTION') return;
-    if (!gameState.buzzerWinner || gameState.buzzerWinner.socketId !== socket.id) return;
+    const winner = gameState.buzzerWinner;
+    if (!winner) return;
+
+    let player = gameState.players[socket.id];
+    if (!player && (playerId || (name && teamId))) {
+      const pKey = playerId || `${(name || '').trim().toLowerCase()}_team_${teamId}`;
+      if (persistentPlayers[pKey]) {
+        player = persistentPlayers[pKey];
+        player.socketId = socket.id;
+        gameState.players[socket.id] = player;
+      }
+    }
+
+    const isWinner = (
+      winner.socketId === socket.id ||
+      winner.playerId === (player && player.id) ||
+      winner.playerId === playerId ||
+      (player && winner.playerName === player.name && winner.teamId === player.teamId) ||
+      (name && winner.playerName === name && winner.teamId === parseInt(teamId, 10))
+    );
+    if (!isWinner) return;
+
+    // Keep winner socketId fresh
+    winner.socketId = socket.id;
 
     const chest = gameState.activeChests.find(c => c.id === chestId);
     if (!chest || chest.opened) return;
 
     chest.opened = true;
     let reward = chest.reward;
-    const winner = gameState.buzzerWinner;
-    const player = gameState.players[winner.socketId];
+    const activePlayer = player || gameState.players[winner.socketId] || { name: winner.playerName, score: 0 };
     const team = gameState.teams.find(t => t.id === winner.teamId);
 
     // INTELLIGENT ACTION PENALTY PACING & ANTI-CONSECUTIVE CONTROL
@@ -707,7 +796,7 @@ io.on('connection', (socket) => {
       } else {
         // Cooldown passed: Guarantee the next unplayed cover dance / action from queue!
         if (pendingActionQueue.length === 0) {
-          pendingActionQueue = [...ACTION_PENALTY_POOL].sort(() => Math.random() - 0.5);
+          initActionQueue();
         }
         const nextAction = pendingActionQueue.shift();
         reward = { ...nextAction };
@@ -717,9 +806,9 @@ io.on('connection', (socket) => {
     }
 
     if (chest.type === 'LUCKY') {
-      handleLuckyReward(reward, player, team);
+      handleLuckyReward(reward, activePlayer, team);
     } else {
-      handleUnluckyReward(reward, player, team);
+      handleUnluckyReward(reward, activePlayer, team);
     }
 
     if (
@@ -2011,7 +2100,18 @@ io.on('connection', (socket) => {
   // Host manual controls
   socket.on('host:start_countdown', () => {
     if (!socket.isHostAuthorized) return;
+    if (gameState.status === 'LOBBY') {
+      randomizeQuestions();
+      gameState.currentQuestionIndex = 0;
+    }
     startCountdown();
+  });
+
+  socket.on('host:shuffle_questions', () => {
+    if (!socket.isHostAuthorized) return;
+    randomizeQuestions();
+    gameState.currentQuestionIndex = 0;
+    broadcastState();
   });
 
   socket.on('host:next_question', () => {
@@ -2029,6 +2129,7 @@ io.on('connection', (socket) => {
     clearAllTimers();
     io.emit('game:stop_all_media');
     initActionQueue();
+    randomizeQuestions();
     gameState.status = 'LOBBY';
     gameState.currentQuestionIndex = 0;
     gameState.teams = createDefaultTeams();
@@ -2043,6 +2144,7 @@ io.on('connection', (socket) => {
     gameState.countdownNumber = 5;
     gameState.questionTimeRemaining = 30;
     gameState.shopRewards = JSON.parse(JSON.stringify(rewards));
+    persistentPlayers = {};
     Object.values(gameState.players).forEach(p => {
       p.score = 0;
       p.inventory = [];

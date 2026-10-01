@@ -1,7 +1,15 @@
 // Mobile Player Client Logic
 const socket = io();
 
+// Persistent unique player identity stored in localStorage
+let myPlayerId = localStorage.getItem('cqg_player_id');
+if (!myPlayerId) {
+  myPlayerId = 'p_' + Math.random().toString(36).substring(2, 10) + '_' + Date.now();
+  localStorage.setItem('cqg_player_id', myPlayerId);
+}
+
 let myInfo = {
+  id: myPlayerId,
   name: '',
   teamId: null,
   socketId: null
@@ -13,13 +21,42 @@ let currentGameState = null;
 const screenLogin = document.getElementById('screenLogin');
 const screenGame = document.getElementById('screenGame');
 
-// Load stored info
+// Load stored info & session auto-restore
 const savedName = localStorage.getItem('cqg_player_name');
 const savedTeam = localStorage.getItem('cqg_player_team');
+const wasJoined = sessionStorage.getItem('cqg_is_joined') === 'true';
+
 if (savedName && savedTeam) {
   document.getElementById('inputPlayerName').value = savedName;
   document.getElementById('selectPlayerTeam').value = savedTeam;
+  myInfo.name = savedName;
+  myInfo.teamId = parseInt(savedTeam, 10);
+
+  if (wasJoined) {
+    screenLogin.classList.add('hidden');
+    screenGame.classList.remove('hidden');
+    document.getElementById('playerHeaderName').textContent = myInfo.name;
+    document.getElementById('playerTeamBadge').textContent = `T${myInfo.teamId}`;
+  }
 }
+
+// Auto reconnect on socket connect
+socket.on('connect', () => {
+  myInfo.socketId = socket.id;
+  const sName = myInfo.name || localStorage.getItem('cqg_player_name');
+  const sTeam = myInfo.teamId || localStorage.getItem('cqg_player_team');
+  const isJoined = sessionStorage.getItem('cqg_is_joined') === 'true';
+
+  if (sName && sTeam && (isJoined || myInfo.name)) {
+    myInfo.name = sName;
+    myInfo.teamId = parseInt(sTeam, 10);
+    socket.emit('player:join', {
+      playerId: myPlayerId,
+      name: myInfo.name,
+      teamId: myInfo.teamId
+    });
+  }
+});
 
 // Join Form Submit
 document.getElementById('joinForm').addEventListener('submit', (e) => {
@@ -31,10 +68,16 @@ document.getElementById('joinForm').addEventListener('submit', (e) => {
 
   myInfo.name = name;
   myInfo.teamId = parseInt(teamId, 10);
+  myInfo.socketId = socket.id;
   localStorage.setItem('cqg_player_name', name);
   localStorage.setItem('cqg_player_team', teamId);
+  sessionStorage.setItem('cqg_is_joined', 'true');
 
-  socket.emit('player:join', { name: myInfo.name, teamId: myInfo.teamId });
+  socket.emit('player:join', {
+    playerId: myPlayerId,
+    name: myInfo.name,
+    teamId: myInfo.teamId
+  });
 
   screenLogin.classList.add('hidden');
   screenGame.classList.remove('hidden');
@@ -120,7 +163,12 @@ optionButtons.forEach(btn => {
     if (navigator.vibrate) navigator.vibrate(80);
     window.gameSound.playBuzz();
 
-    socket.emit('player:buzz_answer', { optionIndex: optIndex });
+    socket.emit('player:buzz_answer', {
+      optionIndex: optIndex,
+      playerId: myPlayerId,
+      name: myInfo.name,
+      teamId: myInfo.teamId
+    });
   });
 });
 
@@ -242,7 +290,7 @@ socket.on('game:state_update', (state) => {
   myInfo.socketId = socket.id;
 
   // Header Scores
-  const myPlayer = state.players.find(p => p.id === socket.id);
+  const myPlayer = state.players.find(p => p.id === myPlayerId || p.socketId === socket.id || p.id === socket.id || (p.name === myInfo.name && p.teamId === myInfo.teamId));
   const myTeam = state.teams.find(t => t.id === myInfo.teamId);
 
   if (myPlayer) {
@@ -302,23 +350,32 @@ function updateMobileView(state) {
       renderMobileBuzzed(state.buzzerWinner);
       break;
 
-    case 'CHEST_SELECTION':
-      if (state.buzzerWinner && state.buzzerWinner.playerId === myInfo.socketId) {
+    case 'CHEST_SELECTION': {
+      const isMyTurn = state.buzzerWinner && (
+        state.buzzerWinner.socketId === socket.id ||
+        state.buzzerWinner.playerId === socket.id ||
+        state.buzzerWinner.playerId === myPlayerId ||
+        (state.buzzerWinner.playerName === myInfo.name && state.buzzerWinner.teamId === myInfo.teamId)
+      );
+      if (isMyTurn) {
         if (chestPicker) chestPicker.classList.remove('hidden');
         renderMobileChests(state);
         statusNotice.textContent = 'BẠN ĐÃ GIÀNH QUYỀN MỞ RƯƠNG!';
       } else {
+        if (chestPicker) chestPicker.classList.add('hidden');
         statusNotice.textContent = `${state.buzzerWinner ? state.buzzerWinner.playerName : 'Đối thủ'} đang mở rương...`;
       }
       break;
+    }
 
     case 'ACTION_PENALTY': {
       const penalty = state.activePenalty;
       const isTarget = penalty && (
         penalty.playerId === socket.id ||
         penalty.playerId === myInfo.socketId ||
+        penalty.playerId === myPlayerId ||
         penalty.playerName === myInfo.name ||
-        penalty.teamId === myInfo.teamId
+        (penalty.isGroup && penalty.teamId === myInfo.teamId)
       );
       if (isTarget) {
         if (penaltyArea) penaltyArea.classList.remove('hidden');
@@ -341,15 +398,22 @@ function updateMobileView(state) {
       statusNotice.textContent = '⚡ THỬ THÁCH THẦN TÍNH: HÃY HÔ TO ĐÁP ÁN RA MIỆNG TRONG 4S!';
       break;
 
-    case 'TEAM_NAME_CHALLENGE':
+    case 'TEAM_NAME_CHALLENGE': {
       if (teamNameArea) teamNameArea.classList.remove('hidden');
       renderMobileTeamNameChallenge(state.teamNameChallenge);
-      if (state.teamNameChallenge && state.teamNameChallenge.playerId === myInfo.socketId) {
+      const isMyTurn = state.teamNameChallenge && (
+        state.teamNameChallenge.playerId === socket.id ||
+        state.teamNameChallenge.playerId === myInfo.socketId ||
+        state.teamNameChallenge.playerId === myPlayerId ||
+        state.teamNameChallenge.playerName === myInfo.name
+      );
+      if (isMyTurn) {
         statusNotice.textContent = '🎯 BẮN TÊN ĐỒNG ĐỘI: Hãy đọc to và rõ họ tên của tất cả các bạn trong nhóm mình!';
       } else {
         statusNotice.textContent = `🎯 ${state.teamNameChallenge ? state.teamNameChallenge.playerName : 'Thí sinh'} đang đọc tên các thành viên...`;
       }
       break;
+    }
 
     case 'POST_GAME':
       if (postGameArea) postGameArea.classList.remove('hidden');
@@ -570,7 +634,12 @@ function renderMobileChests(state) {
 
     btn.addEventListener('click', () => {
       if (navigator.vibrate) navigator.vibrate(60);
-      socket.emit('player:pick_chest', { chestId: c.id });
+      socket.emit('player:pick_chest', {
+        chestId: c.id,
+        playerId: myPlayerId,
+        name: myInfo.name,
+        teamId: myInfo.teamId
+      });
     });
 
     grid.appendChild(btn);
@@ -905,7 +974,11 @@ const btnMobileSpin = document.getElementById('btnMobileSpinWheel');
 if (btnMobileSpin) {
   btnMobileSpin.addEventListener('click', () => {
     if (navigator.vibrate) navigator.vibrate(60);
-    socket.emit('player:spin_wheel');
+    socket.emit('player:spin_wheel', {
+      playerId: myPlayerId,
+      name: myInfo.name,
+      teamId: myInfo.teamId
+    });
   });
 }
 
