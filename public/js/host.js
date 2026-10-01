@@ -614,6 +614,26 @@ function renderActionPenalty(penalty) {
   }
 
   const mediaId = penalty.mediaId || (penalty.youtubeIds && penalty.youtubeIds[0]);
+  let videoUrl = 'https://www.youtube.com';
+  if (penalty.mediaType === 'tiktok' || penalty.type === 'ACTION_TIKTOK_GROUP') {
+    videoUrl = 'https://www.tiktok.com/@thienphuc0331/video/7559228650248260882';
+  } else if (mediaId) {
+    videoUrl = `https://www.youtube.com/watch?v=${mediaId}`;
+  }
+
+  const btnHostOpenVideoNewTab = document.getElementById('btnHostOpenVideoNewTab');
+  if (btnHostOpenVideoNewTab) btnHostOpenVideoNewTab.href = videoUrl;
+
+  const btnVideoPlayingExternal = document.getElementById('btnVideoPlayingExternal');
+  if (btnVideoPlayingExternal) btnVideoPlayingExternal.href = videoUrl;
+
+  const btnHostStartPerformance = document.getElementById('btnHostStartPerformance');
+  if (btnHostStartPerformance) {
+    btnHostStartPerformance.onclick = () => {
+      socket.emit('host:start_action_performance');
+    };
+  }
+
   const penaltyKey = `${penalty.playerId}_${penalty.type}_${mediaId}`;
 
   if (currentActionPenaltyKey !== penaltyKey) {

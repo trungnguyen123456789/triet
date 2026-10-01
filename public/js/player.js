@@ -312,15 +312,24 @@ function updateMobileView(state) {
       }
       break;
 
-    case 'ACTION_PENALTY':
-      if (state.activePenalty && state.activePenalty.playerId === myInfo.socketId) {
+    case 'ACTION_PENALTY': {
+      const penalty = state.activePenalty;
+      const isTarget = penalty && (
+        penalty.playerId === socket.id ||
+        penalty.playerId === myInfo.socketId ||
+        penalty.playerName === myInfo.name ||
+        penalty.teamId === myInfo.teamId
+      );
+      if (isTarget) {
         if (penaltyArea) penaltyArea.classList.remove('hidden');
-        renderMobilePenalty(state.activePenalty);
-        statusNotice.textContent = 'BẠN PHẢI THỰC HIỆN HÌNH PHẠT!';
+        renderMobilePenalty(penalty);
+        statusNotice.textContent = 'BẠN / NHÓM BẠN ĐANG PHẢI THỰC HIỆN HÌNH PHẠT!';
       } else {
-        statusNotice.textContent = `${state.activePenalty ? state.activePenalty.playerName : 'Người chơi'} đang nhận hình phạt!`;
+        if (penaltyArea) penaltyArea.classList.add('hidden');
+        statusNotice.textContent = `${penalty ? penalty.playerName : 'Người chơi'} (${penalty ? penalty.teamName : ''}) đang nhận hình phạt!`;
       }
       break;
+    }
 
     case 'WHEEL_SPIN':
       if (wheelArea) wheelArea.classList.remove('hidden');
@@ -570,9 +579,24 @@ function renderMobileChests(state) {
 
 // Render Action Penalty on Mobile
 function renderMobilePenalty(penalty) {
-  document.getElementById('mPenaltyIcon').textContent = penalty.icon || '💃';
-  document.getElementById('mPenaltyTitle').textContent = penalty.title;
-  document.getElementById('mPenaltyDesc').textContent = penalty.desc;
+  if (!penalty) return;
+  const iconEl = document.getElementById('mPenaltyIcon');
+  const titleEl = document.getElementById('mPenaltyTitle');
+  const descEl = document.getElementById('mPenaltyDesc');
+  const actionBtns = document.getElementById('mPenaltyActionButtons');
+  const performingBox = document.getElementById('mPenaltyPerformingBox');
+
+  if (iconEl) iconEl.textContent = penalty.icon || '💃';
+  if (titleEl) titleEl.textContent = penalty.title;
+  if (descEl) descEl.textContent = penalty.desc;
+
+  if (penalty.isPerforming) {
+    if (actionBtns) actionBtns.classList.add('hidden');
+    if (performingBox) performingBox.classList.remove('hidden');
+  } else {
+    if (actionBtns) actionBtns.classList.remove('hidden');
+    if (performingBox) performingBox.classList.add('hidden');
+  }
 
   const btnSkip = document.getElementById('btnMobileUseSkipCard');
   if (btnSkip) {
@@ -590,29 +614,23 @@ function renderMobilePenalty(penalty) {
   }
 }
 
-document.getElementById('btnMobileAcceptPenalty').addEventListener('click', () => {
-  const penaltyArea = document.getElementById('mobilePenaltyArea');
-  const penalty = currentGameState ? currentGameState.activePenalty : null;
-  const isGroup = penalty && penalty.isGroup;
+const btnMobileAccept = document.getElementById('btnMobileAcceptPenalty');
+if (btnMobileAccept) {
+  btnMobileAccept.addEventListener('click', () => {
+    socket.emit('player:start_action_performance');
+    const actionBtns = document.getElementById('mPenaltyActionButtons');
+    const performingBox = document.getElementById('mPenaltyPerformingBox');
+    if (actionBtns) actionBtns.classList.add('hidden');
+    if (performingBox) performingBox.classList.remove('hidden');
+  });
+}
 
-  penaltyArea.innerHTML = `
-    <div class="text-center py-6 space-y-3">
-      <div class="text-5xl animate-bounce">${isGroup ? '🔥' : '🎬'}</div>
-      <h3 class="text-lg font-black bungee-font text-indigo-600">
-        ${isGroup ? 'CẢ NHÓM HÃY BƯỚC LÊN BỤC GIẢNG!' : 'ĐANG PHÁT VIDEO TRÊN MÁY CHIẾU!'}
-      </h3>
-      <p class="text-xs text-slate-600 font-semibold leading-relaxed">
-        ${isGroup 
-          ? 'Cả nhóm hãy cùng nhau nhảy cover theo điệu nhảy trên máy chiếu! Nếu hoàn thành tốt, tất cả thành viên trong nhóm sẽ được CỘNG +4 ĐIỂM!' 
-          : 'Hãy tự tin bước lên bục giảng và biểu diễn theo nhịp nhạc nhé! Nếu hoàn thành bạn sẽ được cộng +2 điểm cá nhân!'}
-      </p>
-    </div>
-  `;
-  socket.emit('player:start_action_performance');
-});
-document.getElementById('btnMobileForfeitPenalty').addEventListener('click', () => {
-  socket.emit('player:forfeit_action_penalty');
-});
+const btnMobileForfeit = document.getElementById('btnMobileForfeitPenalty');
+if (btnMobileForfeit) {
+  btnMobileForfeit.addEventListener('click', () => {
+    socket.emit('player:forfeit_action_penalty');
+  });
+}
 
 // Render Inventory (Túi Đồ)
 function renderInventory() {

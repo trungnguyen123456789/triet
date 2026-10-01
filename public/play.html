@@ -178,26 +178,35 @@
       </div>
 
       <!-- 3. Action Penalty Controls on Mobile -->
-      <div id="mobilePenaltyArea" class="hidden w-full max-w-sm glass-panel p-5 rounded-3xl border-2 border-rose-400 bg-white space-y-4 shadow-lg">
+      <div id="mobilePenaltyArea" class="hidden w-full max-w-sm glass-panel p-5 rounded-3xl border-2 border-rose-400 bg-white space-y-4 shadow-lg text-center">
         <div class="text-4xl text-rose-500" id="mPenaltyIcon">💃</div>
         <div>
           <span class="px-3 py-1 rounded-full text-[10px] font-bold bg-rose-100 text-rose-700 border border-rose-300 uppercase">
-            HÌNH PHẠT DÀNH CHO BẠN
+            HÌNH PHẠT HÀNH ĐỘNG
           </span>
           <h3 id="mPenaltyTitle" class="text-xl font-black bungee-font text-slate-900 mt-2">IDOL GIỚI TRẺ</h3>
-          <p id="mPenaltyDesc" class="text-xs text-slate-600 mt-1">Biểu diễn 1 đoạn nhảy trước lớp!</p>
+          <p id="mPenaltyDesc" class="text-xs text-slate-600 mt-1 font-medium">Biểu diễn 1 đoạn nhảy trước lớp!</p>
         </div>
 
-        <div class="space-y-2 pt-2">
+        <div id="mPenaltyActionButtons" class="space-y-2.5 pt-2">
           <button id="btnMobileUseSkipCard" class="hidden w-full py-3 rounded-xl bg-gradient-to-r from-teal-500 to-emerald-600 text-white font-black text-xs shadow animate-pulse">
             <i class="fa-solid fa-forward mr-1"></i> DÙNG THẺ BỎ QUA LƯỢT (MIỄN PHẠT)
           </button>
-          <button id="btnMobileAcceptPenalty" class="w-full py-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow">
-            <i class="fa-solid fa-check mr-1"></i> TÔI SẼ BIỂU DIỄN
+          <button id="btnMobileAcceptPenalty" class="w-full py-3.5 rounded-2xl bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white font-black text-sm shadow-lg shadow-emerald-500/25 active:scale-95 transition flex items-center justify-center gap-2 cursor-pointer">
+            <i class="fa-solid fa-check text-lg"></i>
+            <span>TÔI ĐỒNG Ý BIỂU DIỄN 🎬</span>
           </button>
-          <button id="btnMobileForfeitPenalty" class="w-full py-3 rounded-xl bg-gradient-to-r from-rose-600 to-amber-600 text-white font-black text-xs shadow">
-            <i class="fa-solid fa-rotate mr-1"></i> BỎ QUA (QUAY VÒNG TRỪ ĐIỂM)
+          <button id="btnMobileForfeitPenalty" class="w-full py-3 rounded-2xl bg-gradient-to-r from-rose-700 to-rose-900 hover:from-rose-800 hover:to-rose-950 text-white font-black text-xs shadow active:scale-95 transition flex items-center justify-center gap-1.5 cursor-pointer border border-rose-500/30">
+            <i class="fa-solid fa-skull mr-1 text-amber-300"></i>
+            <span>BỎ QUA (PHẠT NẶNG -5Đ CÁ NHÂN & -10Đ ĐẾN -19Đ NHÓM)</span>
           </button>
+        </div>
+
+        <!-- Performing status message -->
+        <div id="mPenaltyPerformingBox" class="hidden text-center py-4 space-y-2 bg-emerald-50 rounded-2xl border border-emerald-200">
+          <div class="text-4xl animate-bounce">🎬</div>
+          <h4 class="text-sm font-black bungee-font text-emerald-800">ĐANG PHÁT VIDEO TRÊN MÁY CHIẾU!</h4>
+          <p class="text-xs text-emerald-700 font-medium">Hãy tự tin bước lên bục giảng và biểu diễn theo nhịp điệu nhé!</p>
         </div>
       </div>
 

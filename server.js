@@ -482,6 +482,18 @@ function reopenQuestionForOthers() {
 
 // Socket handlers
 io.on('connection', (socket) => {
+  socket.isHostAuthorized = false;
+
+  socket.on('host:authenticate', ({ pin }) => {
+    if (pin === '4829') {
+      socket.isHostAuthorized = true;
+      socket.emit('host:auth_success');
+    } else {
+      socket.isHostAuthorized = false;
+      socket.emit('host:auth_failed', { message: 'Mã PIN không chính xác' });
+    }
+  });
+
   socket.emit('game:state_update', getPublicState());
 
   socket.on('player:join', ({ name, teamId }) => {
@@ -1354,6 +1366,7 @@ io.on('connection', (socket) => {
   }
 
   socket.on('host:team_name_result', ({ isCorrect }) => {
+    if (!socket.isHostAuthorized) return;
     if (gameState.status !== 'TEAM_NAME_CHALLENGE' || !gameState.teamNameChallenge) return;
     const challenge = gameState.teamNameChallenge;
     const team = gameState.teams.find(t => t.id === challenge.teamId);
@@ -1377,6 +1390,7 @@ io.on('connection', (socket) => {
   });
 
   socket.on('host:speed_math_result', ({ isCorrect }) => {
+    if (!socket.isHostAuthorized) return;
     if (gameState.status !== 'SPEED_MATH' || !gameState.speedMath) return;
 
     if (isCorrect) {
@@ -1411,8 +1425,17 @@ io.on('connection', (socket) => {
     broadcastState();
   });
 
+  socket.on('host:start_action_performance', () => {
+    if (!socket.isHostAuthorized) return;
+    if (gameState.status !== 'ACTION_PENALTY' || !gameState.activePenalty) return;
+    gameState.activePenalty.isPerforming = true;
+    io.emit('game:start_action_countdown');
+    broadcastState();
+  });
+
   // HOST 3-BUTTON ACTION JUDGMENT
   socket.on('host:judge_action', ({ result }) => {
+    if (!socket.isHostAuthorized) return;
     if (gameState.status !== 'ACTION_PENALTY' || !gameState.activePenalty) return;
 
     const penalty = gameState.activePenalty;
@@ -1461,17 +1484,17 @@ io.on('connection', (socket) => {
       io.emit('game:stop_all_media');
 
       const penaltySegments = [
-        { label: 'Cá nhân -0đ | Nhóm -10đ', pMinus: 0, tMinus: 10 },
-        { label: 'Cá nhân -5đ | Nhóm -10đ', pMinus: 5, tMinus: 10 },
-        { label: 'Cá nhân -0đ | Nhóm -15đ', pMinus: 0, tMinus: 15 },
-        { label: 'Cá nhân -10đ | Nhóm -20đ', pMinus: 10, tMinus: 20 },
-        { label: 'Cá nhân -2đ | Nhóm -5đ', pMinus: 2, tMinus: 5 },
-        { label: '✨ THOÁT NẠN! Trừ 0 điểm', pMinus: 0, tMinus: 0 }
+        { label: '☠️ Cá nhân -5đ | Nhóm -10đ', pMinus: 5, tMinus: 10 },
+        { label: '⚡ Cá nhân -6đ | Nhóm -12đ', pMinus: 6, tMinus: 12 },
+        { label: '💥 Cá nhân -7đ | Nhóm -14đ', pMinus: 7, tMinus: 14 },
+        { label: '🔥 Cá nhân -8đ | Nhóm -16đ', pMinus: 8, tMinus: 16 },
+        { label: '💣 Cá nhân -9đ | Nhóm -18đ', pMinus: 9, tMinus: 18 },
+        { label: '💀 Cá nhân -10đ | Nhóm -19đ', pMinus: 10, tMinus: 19 }
       ];
 
       startWheelSpin({
         type: 'PENALTY_FORFEIT',
-        title: '🎡 VÒNG QUAY CHUỘC TỘI (CHỊU PHẠT TRỪ ĐIỂM)',
+        title: '🎡 VÒNG QUAY CHỊU PHẠT NẶNG (NÉ BIỂU DIỄN)',
         segments: penaltySegments,
         playerId: penalty.playerId,
         teamId: penalty.teamId
@@ -1484,17 +1507,17 @@ io.on('connection', (socket) => {
     io.emit('game:stop_all_media');
 
     const penaltySegments = [
-      { label: 'Cá nhân -0đ | Nhóm -10đ', pMinus: 0, tMinus: 10 },
-      { label: 'Cá nhân -5đ | Nhóm -10đ', pMinus: 5, tMinus: 10 },
-      { label: 'Cá nhân -0đ | Nhóm -15đ', pMinus: 0, tMinus: 15 },
-      { label: 'Cá nhân -10đ | Nhóm -20đ', pMinus: 10, tMinus: 20 },
-      { label: 'Cá nhân -2đ | Nhóm -5đ', pMinus: 2, tMinus: 5 },
-      { label: '✨ THOÁT NẠN! Trừ 0 điểm', pMinus: 0, tMinus: 0 }
+      { label: '☠️ Cá nhân -5đ | Nhóm -10đ', pMinus: 5, tMinus: 10 },
+      { label: '⚡ Cá nhân -6đ | Nhóm -12đ', pMinus: 6, tMinus: 12 },
+      { label: '💥 Cá nhân -7đ | Nhóm -14đ', pMinus: 7, tMinus: 14 },
+      { label: '🔥 Cá nhân -8đ | Nhóm -16đ', pMinus: 8, tMinus: 16 },
+      { label: '💣 Cá nhân -9đ | Nhóm -18đ', pMinus: 9, tMinus: 18 },
+      { label: '💀 Cá nhân -10đ | Nhóm -19đ', pMinus: 10, tMinus: 19 }
     ];
 
     startWheelSpin({
       type: 'PENALTY_FORFEIT',
-      title: '🎡 VÒNG QUAY CHUỘC TỘI (TRỪ ĐIỂM BỎ QUA)',
+      title: '🎡 VÒNG QUAY CHỊU PHẠT NẶNG (TỪ CHỐI BIỂU DIỄN)',
       segments: penaltySegments,
       playerId: gameState.activePenalty.playerId,
       teamId: gameState.activePenalty.teamId
@@ -1551,7 +1574,7 @@ io.on('connection', (socket) => {
 
     if (wheel.type === 'PENALTY_FORFEIT') {
       if (player) player.score = Math.max(0, player.score - (seg.pMinus || 0));
-      if (team) team.score = Math.max(0, team.score - (seg.tMinus || 0));
+      if (team) deductTeamPoints(team, seg.tMinus || 0, 'Chịu phạt từ chối biểu diễn');
     } else if (wheel.type === 'MATH_JACKPOT') {
       if (player) player.score += (seg.pScore || 0);
       if (team) {
@@ -1949,6 +1972,7 @@ io.on('connection', (socket) => {
 
   // Host manual stock management
   socket.on('host:sell_reward', ({ rewardId }) => {
+    if (!socket.isHostAuthorized) return;
     const rewardItem = gameState.shopRewards.find(r => r.id === rewardId);
     if (!rewardItem) return;
     if (rewardItem.stock > 0) {
@@ -1968,6 +1992,7 @@ io.on('connection', (socket) => {
   });
 
   socket.on('host:restock_reward', ({ rewardId }) => {
+    if (!socket.isHostAuthorized) return;
     const rewardItem = gameState.shopRewards.find(r => r.id === rewardId);
     if (!rewardItem) return;
     rewardItem.stock += 1;
@@ -1975,6 +2000,7 @@ io.on('connection', (socket) => {
   });
 
   socket.on('host:trigger_bakhi', (data) => {
+    if (!socket.isHostAuthorized) return;
     io.emit('game:bakhi_activated', {
       playerName: (data && data.playerName) || 'Người điều hành',
       teamName: (data && data.teamName) || 'Nhóm Bá Khí',
@@ -1984,18 +2010,22 @@ io.on('connection', (socket) => {
 
   // Host manual controls
   socket.on('host:start_countdown', () => {
+    if (!socket.isHostAuthorized) return;
     startCountdown();
   });
 
   socket.on('host:next_question', () => {
+    if (!socket.isHostAuthorized) return;
     proceedToNextQuestion();
   });
 
   socket.on('host:reopen_question', () => {
+    if (!socket.isHostAuthorized) return;
     reopenQuestionForOthers();
   });
 
   socket.on('host:reset_game', () => {
+    if (!socket.isHostAuthorized) return;
     clearAllTimers();
     io.emit('game:stop_all_media');
     initActionQueue();

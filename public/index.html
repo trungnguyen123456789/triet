@@ -337,12 +337,25 @@
         </div>
 
         <!-- Waiting Card (when !penalty.isPerforming) -->
-        <div id="penaltyWaitingBox" class="p-8 rounded-2xl bg-amber-50 border-2 border-amber-300 max-w-lg mx-auto text-center space-y-3 shadow-md">
+        <div id="penaltyWaitingBox" class="p-6 rounded-2xl bg-amber-50 border-2 border-amber-300 max-w-lg mx-auto text-center space-y-4 shadow-md">
           <div class="text-5xl animate-bounce">📱</div>
           <h4 class="text-xl font-black text-amber-800 bungee-font">ĐANG CHỜ XÁC NHẬN</h4>
           <p class="text-sm font-bold text-slate-700" id="penaltyWaitingText">
-            Đang đợi người chơi nhấn "TÔI SẼ BIỂU DIỄN" trên điện thoại...
+            Đang đợi người chơi nhấn "TÔI ĐỒNG Ý BIỂU DIỄN" trên điện thoại...
           </p>
+
+          <!-- Host Controls in case of student phone lag/issues -->
+          <div class="pt-2 border-t border-amber-200 flex flex-col sm:flex-row items-center justify-center gap-2">
+            <button id="btnHostStartPerformance" type="button" class="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-black text-xs shadow-md active:scale-95 transition flex items-center justify-center gap-1.5 cursor-pointer">
+              <i class="fa-solid fa-play"></i>
+              <span>BẮT ĐẦU / MỞ VIDEO (HOST)</span>
+            </button>
+            <a id="btnHostOpenVideoNewTab" href="#" target="_blank" rel="noopener noreferrer" class="w-full sm:w-auto px-4 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs shadow-md active:scale-95 transition flex items-center justify-center gap-1.5">
+              <i class="fa-brands fa-youtube"></i>
+              <span>MỞ TAB MỚI (PHÒNG LỖI)</span>
+              <i class="fa-solid fa-arrow-up-right-from-square text-[10px]"></i>
+            </a>
+          </div>
         </div>
 
         <!-- 3-2-1 Countdown Box (when penalty.isPerforming becomes true, before video shows) -->
@@ -357,6 +370,12 @@
         <!-- Video Container (YouTube / TikTok) -->
         <div id="penaltyVideoContainer" class="hidden w-full max-w-lg mx-auto rounded-2xl overflow-hidden border-2 border-indigo-400 shadow-xl bg-black relative">
           <iframe id="penaltyYoutubeFrame" class="w-full h-80" src="" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+          <div class="p-2.5 bg-slate-900 text-center border-t border-slate-800">
+            <a id="btnVideoPlayingExternal" href="#" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-1.5 text-xs text-amber-400 hover:text-amber-300 font-bold transition">
+              <i class="fa-solid fa-arrow-up-right-from-square"></i>
+              <span>Bấm vào đây để mở video trên Tab mới (nếu video bị chặn bản quyền/lỗi mạng)</span>
+            </a>
+          </div>
         </div>
 
         <!-- TikTok External Open Link (in case browser restricts TikTok embed) -->
