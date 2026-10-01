@@ -201,36 +201,66 @@ socket.on('player:alert', (data) => {
 let delayLocalTimer = null;
 let delaySecondsLeft = 0;
 let isLocalDelayActive = false;
+let delayCompletedQuestionIndex = -1;
 
 function checkAndStartDelay3s(myTeam) {
   const delayOverlay = document.getElementById('delay3sNoticeOverlay');
   const delayText = document.getElementById('delay3sCountdownText');
   const hasDelay = !!(myTeam && myTeam.buffs && myTeam.buffs.delay3s > 0);
 
-  if (!hasDelay) {
+  const currentQIdx = (currentGameState && currentGameState.currentQuestionIndex !== undefined)
+    ? currentGameState.currentQuestionIndex
+    : -1;
+
+  // 1. Không bị dính debuff hoặc câu hỏi này đã đếm ngược xong 3s rồi -> Mở nút ngay!
+  if (!hasDelay || delayCompletedQuestionIndex === currentQIdx) {
     isLocalDelayActive = false;
-    clearInterval(delayLocalTimer);
+    if (delayLocalTimer) {
+      clearInterval(delayLocalTimer);
+      delayLocalTimer = null;
+    }
     if (delayOverlay) delayOverlay.classList.add('hidden');
     return false;
   }
 
+  // 2. Nếu thời gian câu hỏi trên server đã trôi qua quá 3 giây (còn <= 27s) -> Đã hết hạn delay
+  if (currentGameState && currentGameState.questionTimeRemaining !== undefined && currentGameState.questionTimeRemaining <= 27) {
+    delayCompletedQuestionIndex = currentQIdx;
+    isLocalDelayActive = false;
+    if (delayLocalTimer) {
+      clearInterval(delayLocalTimer);
+      delayLocalTimer = null;
+    }
+    if (delayOverlay) delayOverlay.classList.add('hidden');
+    return false;
+  }
+
+  // 3. Nếu timer đang chạy cho câu này -> Tiếp tục khóa nút chờ hết 3s
   if (isLocalDelayActive) {
     return true;
   }
 
+  // 4. Bắt đầu đếm ngược 3s (chỉ chạy duy nhất 1 lần trong câu hỏi này)
   isLocalDelayActive = true;
-  delaySecondsLeft = 3;
+  let initialDelay = 3;
+  if (currentGameState && currentGameState.questionTimeRemaining !== undefined && currentGameState.questionTimeRemaining < 30) {
+    initialDelay = Math.max(1, currentGameState.questionTimeRemaining - 27);
+  }
+  delaySecondsLeft = initialDelay;
+
   if (delayOverlay) delayOverlay.classList.remove('hidden');
   if (delayText) delayText.textContent = `${delaySecondsLeft}s`;
 
-  clearInterval(delayLocalTimer);
+  if (delayLocalTimer) clearInterval(delayLocalTimer);
   delayLocalTimer = setInterval(() => {
     delaySecondsLeft--;
     if (delaySecondsLeft > 0) {
       if (delayText) delayText.textContent = `${delaySecondsLeft}s`;
     } else {
       clearInterval(delayLocalTimer);
+      delayLocalTimer = null;
       isLocalDelayActive = false;
+      delayCompletedQuestionIndex = currentQIdx; // Đánh dấu HOÀN THÀNH: Không bao giờ lặp lại ở câu này nữa!
       if (delayOverlay) delayOverlay.classList.add('hidden');
       if (currentGameState && currentGameState.status === 'QUESTION') {
         renderMobileQuestion(currentGameState);
@@ -242,7 +272,10 @@ function checkAndStartDelay3s(myTeam) {
 }
 
 function clearDelay3s() {
-  clearInterval(delayLocalTimer);
+  if (delayLocalTimer) {
+    clearInterval(delayLocalTimer);
+    delayLocalTimer = null;
+  }
   isLocalDelayActive = false;
   const delayOverlay = document.getElementById('delay3sNoticeOverlay');
   if (delayOverlay) delayOverlay.classList.add('hidden');
