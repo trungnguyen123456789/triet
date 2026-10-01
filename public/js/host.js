@@ -194,6 +194,11 @@ function renderState(state) {
 
   renderSidebarTeams(state.teams, state.lockedTeamsForQuestion);
 
+  const shopModalEl = document.getElementById('hostShopModal');
+  if (shopModalEl && !shopModalEl.classList.contains('hidden')) {
+    renderHostShopModal();
+  }
+
   switch (state.status) {
     case 'LOBBY':
       showView('lobby');
@@ -203,8 +208,19 @@ function renderState(state) {
     case 'COUNTDOWN':
       showView('countdown');
       document.getElementById('buzzBanner').classList.add('hidden');
+      const annModal = document.getElementById('announcementModal');
+      if (annModal) annModal.classList.add('hidden');
       const el = document.getElementById('countdownNumber');
       if (el) el.textContent = state.countdownNumber;
+      const countTitle = document.getElementById('countdownTitle');
+      const countDesc = document.getElementById('countdownDesc');
+      if (state.isRound2) {
+        if (countTitle) countTitle.textContent = '🔔 MỞ LẠI CHUÔNG CHO TẤT CẢ CÁC NHÓM';
+        if (countDesc) countDesc.textContent = 'Đang đếm ngược 5 giây trước khi mở chuông lại...';
+      } else {
+        if (countTitle) countTitle.textContent = 'CHÚ Ý LÊN MÀN HÌNH';
+        if (countDesc) countDesc.textContent = 'Câu hỏi chuẩn bị xuất hiện...';
+      }
       break;
 
     case 'QUESTION':
@@ -458,48 +474,141 @@ function renderChests(state) {
   }
 }
 
-// 5. Action Penalty Render with YouTube / TikTok Embed
+// 5. Action Penalty Render with YouTube / TikTok Embed & 3-2-1 Countdown
+let actionPenaltyTimer = null;
+let currentActionPenaltyKey = null;
+
+function startActionPenaltyCountdown(penalty, mediaId) {
+  const waitingBox = document.getElementById('penaltyWaitingBox');
+  const countdownBox = document.getElementById('penaltyCountdownBox');
+  const countdownNum = document.getElementById('penaltyCountdownNum');
+  const videoContainer = document.getElementById('penaltyVideoContainer');
+  const frame = document.getElementById('penaltyYoutubeFrame');
+  const tiktokLink = document.getElementById('tiktokLinkContainer');
+
+  if (waitingBox) waitingBox.classList.add('hidden');
+  if (videoContainer) videoContainer.classList.add('hidden');
+  if (tiktokLink) tiktokLink.classList.add('hidden');
+  if (countdownBox) countdownBox.classList.remove('hidden');
+
+  let count = 3;
+  if (countdownNum) countdownNum.textContent = '3';
+  window.gameSound.playTick();
+
+  if (actionPenaltyTimer) clearInterval(actionPenaltyTimer);
+  actionPenaltyTimer = setInterval(() => {
+    count--;
+    if (count > 0) {
+      if (countdownNum) {
+        countdownNum.textContent = count;
+        countdownNum.classList.remove('animate-pulse');
+        void countdownNum.offsetWidth;
+        countdownNum.classList.add('animate-pulse');
+      }
+      window.gameSound.playTick();
+    } else {
+      clearInterval(actionPenaltyTimer);
+      actionPenaltyTimer = null;
+
+      if (countdownBox) countdownBox.classList.add('hidden');
+      if (videoContainer) videoContainer.classList.remove('hidden');
+
+      if (penalty.mediaType === 'tiktok' && mediaId) {
+        if (tiktokLink) tiktokLink.classList.remove('hidden');
+        const tiktokEmbedUrl = `https://www.tiktok.com/embed/v2/${mediaId}`;
+        if (!frame.src.includes(mediaId)) {
+          frame.src = tiktokEmbedUrl;
+        }
+      } else if (mediaId) {
+        if (tiktokLink) tiktokLink.classList.add('hidden');
+        const embedUrl = `https://www.youtube-nocookie.com/embed/${mediaId}?autoplay=1&enablejsapi=1`;
+        if (!frame.src.includes(mediaId)) {
+          frame.src = embedUrl;
+        }
+      }
+      window.gameSound.playFanfare();
+    }
+  }, 1000);
+}
+
 function renderActionPenalty(penalty) {
   if (!penalty) return;
   document.getElementById('penaltyIcon').textContent = penalty.icon || '💃';
   document.getElementById('penaltyTitle').textContent = penalty.title;
   document.getElementById('penaltyDesc').textContent = `${penalty.playerName} (${penalty.teamName}) - ${penalty.desc}`;
 
+  const waitingBox = document.getElementById('penaltyWaitingBox');
+  const countdownBox = document.getElementById('penaltyCountdownBox');
   const videoContainer = document.getElementById('penaltyVideoContainer');
   const frame = document.getElementById('penaltyYoutubeFrame');
   const tiktokLink = document.getElementById('tiktokLinkContainer');
   const judgeSuccessText = document.getElementById('judgeSuccessText');
+  const waitingText = document.getElementById('penaltyWaitingText');
+
+  if (waitingText) {
+    waitingText.textContent = `Đang đợi ${penalty.playerName} (${penalty.teamName}) nhấn "TÔI SẼ BIỂU DIỄN" trên điện thoại...`;
+  }
 
   if (judgeSuccessText) {
     if (penalty.isGroup) {
       judgeSuccessText.textContent = 'CẢ NHÓM ĐÃ HOÀN THÀNH (+4Đ TẤT CẢ)';
-    } else {
+    } else if (['ACTION_CATWALK', 'ACTION_DANCE', 'ACTION_DANCE_2', 'ACTION_RAP'].includes(penalty.type)) {
       judgeSuccessText.textContent = 'ĐÃ HOÀN THÀNH (+2Đ CÁ NHÂN)';
+    } else {
+      judgeSuccessText.textContent = 'ĐÃ HOÀN THÀNH (THOÁT PHẠT)';
     }
   }
 
   const mediaId = penalty.mediaId || (penalty.youtubeIds && penalty.youtubeIds[0]);
+  const penaltyKey = `${penalty.playerId}_${penalty.type}_${mediaId}`;
 
-  if (penalty.mediaType === 'tiktok' && mediaId) {
-    videoContainer.classList.remove('hidden');
-    if (tiktokLink) tiktokLink.classList.remove('hidden');
-    const tiktokEmbedUrl = `https://www.tiktok.com/embed/v2/${mediaId}`;
-    if (!frame.src.includes(mediaId)) {
-      frame.src = tiktokEmbedUrl;
+  if (currentActionPenaltyKey !== penaltyKey) {
+    currentActionPenaltyKey = penaltyKey;
+    if (actionPenaltyTimer) {
+      clearInterval(actionPenaltyTimer);
+      actionPenaltyTimer = null;
     }
-  } else if (mediaId) {
-    videoContainer.classList.remove('hidden');
-    if (tiktokLink) tiktokLink.classList.add('hidden');
-    const embedUrl = `https://www.youtube-nocookie.com/embed/${mediaId}?autoplay=1&enablejsapi=1`;
-    if (!frame.src.includes(mediaId)) {
-      frame.src = embedUrl;
-    }
-  } else {
-    videoContainer.classList.add('hidden');
-    if (tiktokLink) tiktokLink.classList.add('hidden');
-    frame.src = '';
   }
+
+  // Not confirmed yet: show waiting screen, hide video & countdown
+  if (!penalty.isPerforming) {
+    if (actionPenaltyTimer) {
+      clearInterval(actionPenaltyTimer);
+      actionPenaltyTimer = null;
+    }
+    if (waitingBox) waitingBox.classList.remove('hidden');
+    if (countdownBox) countdownBox.classList.add('hidden');
+    if (videoContainer) videoContainer.classList.add('hidden');
+    if (tiktokLink) tiktokLink.classList.add('hidden');
+    if (frame) frame.src = '';
+    return;
+  }
+
+  // If already confirmed:
+  if (waitingBox) waitingBox.classList.add('hidden');
+
+  // If video is already showing and loaded, don't restart countdown
+  if (videoContainer && !videoContainer.classList.contains('hidden') && frame && frame.src) {
+    return;
+  }
+
+  // If countdown is already ticking, let it continue
+  if (actionPenaltyTimer) {
+    return;
+  }
+
+  // Start 3-2-1 countdown then show video!
+  startActionPenaltyCountdown(penalty, mediaId);
 }
+
+// Start action countdown event from server
+socket.on('game:start_action_countdown', () => {
+  if (currentGameState && currentGameState.activePenalty) {
+    const penalty = currentGameState.activePenalty;
+    const mediaId = penalty.mediaId || (penalty.youtubeIds && penalty.youtubeIds[0]);
+    startActionPenaltyCountdown(penalty, mediaId);
+  }
+});
 
 // Replay video event
 socket.on('game:replay_video', () => {
@@ -722,24 +831,62 @@ function renderTeamNameChallenge(challenge) {
     listEl.appendChild(li);
   });
 
-  // 10s Timer
+  // 2 Phases: 5s Preparation -> 10s Challenge
+  let prepRemaining = 5.0;
   let remaining = 10.0;
-  const timerText = document.getElementById('teamNameTimerText');
-  if (timerText) timerText.textContent = '10.0s';
-  clearInterval(teamNameTimer);
+  let isPrep = true;
 
+  const timerText = document.getElementById('teamNameTimerText');
+  const timerLabel = document.getElementById('teamNameTimerLabel');
+  const timerBox = document.getElementById('teamNameTimerBox');
+
+  if (timerBox) timerBox.className = 'p-4 rounded-2xl bg-amber-50 border-2 border-amber-300 text-center space-y-1 transition-all';
+  if (timerText) {
+    timerText.className = 'text-5xl font-black bungee-font text-amber-500 animate-pulse';
+    timerText.textContent = '5s';
+  }
+  if (timerLabel) {
+    timerLabel.className = 'text-xs font-bold uppercase text-amber-700';
+    timerLabel.textContent = '⏳ 5 GIÂY CHUẨN BỊ SẴN SÀNG (NGƯỜI ĐIỀU HÀNH PHỔ BIẾN CƠ CHẾ)...';
+  }
+
+  clearInterval(teamNameTimer);
   window.gameSound.playTick();
+
   teamNameTimer = setInterval(() => {
-    remaining -= 0.1;
-    if (remaining > 0) {
-      if (timerText) timerText.textContent = remaining.toFixed(1) + 's';
-      if (Math.floor(remaining * 10) % 10 === 0) {
-        window.gameSound.playTick();
+    if (isPrep) {
+      prepRemaining -= 0.1;
+      if (prepRemaining > 0) {
+        if (timerText) timerText.textContent = Math.ceil(prepRemaining) + 's';
+        if (Math.floor(prepRemaining * 10) % 10 === 0) {
+          window.gameSound.playTick();
+        }
+      } else {
+        // Switch to Phase 2: 10s Countdown
+        isPrep = false;
+        window.gameSound.playBuzz();
+        if (timerBox) timerBox.className = 'p-4 rounded-2xl bg-rose-50 border-2 border-rose-300 text-center space-y-1 transition-all';
+        if (timerText) {
+          timerText.className = 'text-5xl font-black bungee-font text-rose-600 animate-pulse';
+          timerText.textContent = '10.0s';
+        }
+        if (timerLabel) {
+          timerLabel.className = 'text-xs font-bold uppercase text-rose-700';
+          timerLabel.textContent = '🔥 BẮT ĐẦU! HÃY ĐỌC HẾT TÊN THÀNH VIÊN TRƯỚC KHI HẾT 10 GIÂY!';
+        }
       }
     } else {
-      clearInterval(teamNameTimer);
-      if (timerText) timerText.textContent = '0.0s';
-      window.gameSound.playWrong();
+      remaining -= 0.1;
+      if (remaining > 0) {
+        if (timerText) timerText.textContent = remaining.toFixed(1) + 's';
+        if (Math.floor(remaining * 10) % 10 === 0) {
+          window.gameSound.playTick();
+        }
+      } else {
+        clearInterval(teamNameTimer);
+        if (timerText) timerText.textContent = '0.0s';
+        window.gameSound.playWrong();
+      }
     }
   }, 100);
 }
@@ -775,11 +922,18 @@ function renderSidebarTeams(teams, lockedTeamIds) {
     if (idx === 2) medal = `<span class="w-5 h-5 rounded-full bg-amber-700 text-[10px] font-black flex items-center justify-center text-amber-100 shadow-sm">🥉</span>`;
 
     let badges = '';
-    if (team.buffs.frozen > 0) badges += `<span title="Đang bị đóng băng" class="text-xs">❄️</span>`;
+    if (team.buffs.frozen > 0 || team.buffs.silenced) badges += `<span title="Bị khóa chuông / đóng băng" class="text-xs">🤐</span>`;
     if (team.buffs.delay3s > 0) badges += `<span title="Lời nguyền delay 3 giây" class="text-xs">🐢</span>`;
     if (team.buffs.riskReward) badges += `<span title="Liều ăn nhiều (chỉ chọn A hoặc D)" class="text-xs">🎲</span>`;
+    if (team.buffs.nitroX3) badges += `<span title="Bốc đầu Nitro x3 (Đúng x3, Sai -8đ)" class="text-xs animate-bounce">🚀</span>`;
+    if (team.buffs.failInsurance) badges += `<span title="Bảo hiểm thất bại (+3đ an ủi nếu sai)" class="text-xs">📜</span>`;
+    if (team.buffs.vampireTurns > 0) badges += `<span title="Ký sinh trùng hút máu (${team.buffs.vampireTurns} câu)" class="text-xs">🧛</span>`;
+    if (team.buffs.confusion > 0) badges += `<span title="Lời nguyền mù màu / xáo trộn phím" class="text-xs">🌀</span>`;
+    if (team.buffs.stuckBuzzer > 0) badges += `<span title="Chuông kẹt nút (bấm 5 lần)" class="text-xs">🐢</span>`;
+    if (team.buffs.nationalDebt) badges += `<span title="Nợ công quốc gia" class="text-xs">🏦</span>`;
     if (team.buffs.x2 > 0) badges += `<span title="X2 điểm ở câu sau" class="text-xs">⚡</span>`;
     if (team.buffs.shield) badges += `<span title="Có khiên bảo hộ" class="text-xs">🛡️</span>`;
+    if (team.inventory && team.inventory.some(i => i.code === 'ITEM_REFLECT')) badges += `<span title="Sở hữu Gậy Ông Đập Lưng Ông (Phản đòn)" class="text-xs">🪞</span>`;
 
     card.innerHTML = `
       <div class="flex items-center gap-2">
@@ -869,27 +1023,8 @@ function renderPostGame(state) {
     });
   }
 
-  // 3. Shop Rewards Grid
-  const shopGrid = document.getElementById('shopGrid');
-  if (shopGrid) {
-    shopGrid.innerHTML = '';
-    state.shopRewards.forEach(r => {
-      const item = document.createElement('div');
-      item.className = 'p-5 rounded-2xl glass-panel border border-slate-200 space-y-3 flex flex-col justify-between bg-white shadow-sm hover:shadow-md transition';
-      item.innerHTML = `
-        <div>
-          <div class="text-4xl mb-2">${r.icon}</div>
-          <h4 class="font-extrabold text-base text-slate-900">${r.name}</h4>
-          <p class="text-xs text-slate-500 mt-1">${r.desc}</p>
-        </div>
-        <div class="flex items-center justify-between pt-3 border-t border-slate-100">
-          <span class="text-xs font-bold text-slate-500">Còn lại: <strong class="text-slate-900">${r.stock}</strong></span>
-          <span class="text-sm font-black text-indigo-600 bungee-font">${r.price} Xu</span>
-        </div>
-      `;
-      shopGrid.appendChild(item);
-    });
-  }
+  // 3. Shop Rewards Grid (Spotlight + Real & Bá Khí + Space Luxury)
+  renderPostGameShop(state);
 
   confetti({ particleCount: 120, spread: 80, origin: { y: 0.5 } });
 }
@@ -935,4 +1070,479 @@ if (tabBtnIndiv) {
 }
 if (tabBtnShop) {
   tabBtnShop.addEventListener('click', () => switchHostPostGameTab('shop'));
+}
+
+// ==================== PREMIUM SHOP PRODUCT CARDS & HOST MODAL ====================
+let cachedShopRewards = null;
+
+async function fetchShopRewardsFallback() {
+  if (cachedShopRewards && cachedShopRewards.length > 0) return cachedShopRewards;
+  try {
+    const res = await fetch('/api/rewards');
+    if (res.ok) {
+      cachedShopRewards = await res.json();
+      return cachedShopRewards;
+    }
+  } catch (e) {
+    console.warn('Could not fetch /api/rewards:', e);
+  }
+  return [];
+}
+
+// Pre-fetch shop rewards on load
+fetchShopRewardsFallback();
+
+function getShopProductConfig(r) {
+  const nameLower = (r.name || '').toLowerCase();
+  
+  // 1. Máy bay (Spotlight)
+  if (r.id === 100 || r.isSpotlight || nameLower.includes('máy bay') || nameLower.includes('boeing')) {
+    return {
+      badge: '⭐ SPOTLIGHT TRIỆU ĐÔ',
+      badgeClass: 'bg-gradient-to-r from-amber-400 via-yellow-300 to-amber-500 text-slate-950 font-black shadow-lg shadow-amber-400/30',
+      borderClass: 'border-amber-400 hover:border-yellow-300 shadow-amber-200/50',
+      headerBg: 'from-sky-950 via-slate-900 to-indigo-950 text-white',
+      priceColor: 'text-amber-400',
+      priceDisplay: r.priceFormatted || '23.000.000.000đ',
+      pointsText: r.pointsFormatted || '23.000.000 Điểm',
+      unit: 'chiếc',
+      tagline: 'Boeing 787-9 Dreamliner bao trọn bầu trời!',
+      isSpotlight: true
+    };
+  }
+
+  // 2. Bá Khí
+  if (r.id === 101 || r.isBaKhi || nameLower.includes('bá khí')) {
+    return {
+      badge: '❄️ BÁ KHÍ VÔ ĐỊCH',
+      badgeClass: 'bg-gradient-to-r from-cyan-400 to-blue-600 text-white shadow-cyan-400/40',
+      borderClass: 'border-cyan-300 hover:border-cyan-400 shadow-cyan-100/60 bakhi-frost-glow',
+      headerBg: 'from-cyan-100/80 via-blue-50/60 to-white',
+      priceColor: 'text-cyan-700',
+      priceDisplay: r.priceFormatted || '50.000đ',
+      pointsText: r.pointsFormatted || '50 Điểm',
+      unit: 'lần',
+      tagline: 'Kèm 1 tràng pháo tay tán thưởng cả lớp!',
+      isBaKhi: true
+    };
+  }
+
+  // 3. Swing
+  if (nameLower.includes('swing')) {
+    return {
+      badge: '👑 CỰC PHẨM CHIẾN THẦN',
+      badgeClass: 'bg-gradient-to-r from-amber-500 via-orange-500 to-amber-600 text-white shadow-amber-500/30',
+      borderClass: 'border-amber-300 hover:border-amber-500 shadow-amber-100',
+      headerBg: 'from-amber-100/70 via-orange-50/50 to-white',
+      priceColor: 'text-amber-600',
+      priceDisplay: r.priceFormatted || '60.000đ',
+      pointsText: r.pointsFormatted || '60 Điểm',
+      unit: 'gói',
+      tagline: 'Khoai tây chiên bít tết New York giòn rụm'
+    };
+  }
+
+  // 4. Sting
+  if (nameLower.includes('sting')) {
+    return {
+      badge: '⭐ ĐỘC BẢN 1 LON',
+      badgeClass: 'bg-gradient-to-r from-rose-500 via-red-600 to-pink-600 text-white shadow-rose-500/30',
+      borderClass: 'border-rose-300 hover:border-rose-500 shadow-rose-100',
+      headerBg: 'from-rose-100/70 via-red-50/50 to-white',
+      priceColor: 'text-rose-600',
+      priceDisplay: r.priceFormatted || '50.000đ',
+      pointsText: r.pointsFormatted || '50 Điểm',
+      unit: 'lon',
+      tagline: 'Năng lượng dâu tây mát lạnh giải khát đỉnh cao'
+    };
+  }
+
+  // 5. Hảo Hảo
+  if (nameLower.includes('hảo')) {
+    return {
+      badge: '🍜 ĂN VẶT QUỐC DÂN',
+      badgeClass: 'bg-gradient-to-r from-orange-500 via-amber-500 to-yellow-600 text-white shadow-orange-500/30',
+      borderClass: 'border-orange-300 hover:border-orange-500 shadow-orange-100',
+      headerBg: 'from-orange-100/70 via-amber-50/50 to-white',
+      priceColor: 'text-orange-600',
+      priceDisplay: r.priceFormatted || '25.000đ',
+      pointsText: r.pointsFormatted || '25 Điểm',
+      unit: 'gói',
+      tagline: 'Hương vị tôm chua cay huyền thoại tuổi học trò'
+    };
+  }
+
+  // 6. Kẹo dừa
+  if (nameLower.includes('dừa') || nameLower.includes('kẹo')) {
+    return {
+      badge: '🍬 NGỌT NGÀO BẾN TRE',
+      badgeClass: 'bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-600 text-white shadow-emerald-500/30',
+      borderClass: 'border-emerald-300 hover:border-emerald-500 shadow-emerald-100',
+      headerBg: 'from-emerald-100/70 via-teal-50/50 to-white',
+      priceColor: 'text-emerald-600',
+      priceDisplay: r.priceFormatted || '5.000đ',
+      pointsText: r.pointsFormatted || '5 Điểm / viên',
+      unit: 'viên',
+      tagline: 'Kẹo dừa Yến Hoàng nguyên chất béo ngậy'
+    };
+  }
+
+  // 7. Chuối
+  if (nameLower.includes('chuối')) {
+    return {
+      badge: '🍌 NGHỆ THUẬT SIÊU ĐẮT',
+      badgeClass: 'bg-gradient-to-r from-yellow-400 to-amber-500 text-slate-900 font-black shadow-yellow-400/30',
+      borderClass: 'border-yellow-400 hover:border-yellow-500 shadow-yellow-100',
+      headerBg: 'from-yellow-100/80 via-amber-50/50 to-white',
+      priceColor: 'text-amber-600',
+      priceDisplay: r.priceFormatted || '10.000.000đ',
+      pointsText: r.pointsFormatted || '10.000 Điểm',
+      unit: 'quả',
+      tagline: 'Chuối dán băng keo bạc nghệ thuật đương đại Comedian'
+    };
+  }
+
+  // 8. Voi
+  if (nameLower.includes('voi')) {
+    return {
+      badge: '🐘 ĐẠI GIA NGUYÊN CON',
+      badgeClass: 'bg-gradient-to-r from-slate-600 to-slate-800 text-white shadow-slate-600/30',
+      borderClass: 'border-slate-400 hover:border-slate-600 shadow-slate-200',
+      headerBg: 'from-slate-100 via-stone-50 to-white',
+      priceColor: 'text-slate-800',
+      priceDisplay: r.priceFormatted || '10.000.000.000đ',
+      pointsText: r.pointsFormatted || '10.000.000 Điểm',
+      unit: 'con',
+      tagline: 'Voi bụi cỏ châu Phi trưởng thành khỏe mạnh, bao ship lớp học'
+    };
+  }
+
+  // 9. Soyuz
+  if (nameLower.includes('soyuz') || nameLower.includes('vũ trụ')) {
+    return {
+      badge: '🚀 LIÊN HÀNH TINH (ISS)',
+      badgeClass: 'bg-gradient-to-r from-purple-600 via-indigo-600 to-blue-600 text-white shadow-purple-600/40',
+      borderClass: 'border-purple-400 hover:border-purple-600 shadow-purple-200',
+      headerBg: 'from-purple-100/70 via-indigo-50/50 to-white',
+      priceColor: 'text-purple-700',
+      priceDisplay: r.priceFormatted || '10.000.000.000.000.000đ',
+      pointsText: r.pointsFormatted || '10 Triệu Tỷ Điểm',
+      unit: 'chiếc',
+      tagline: 'Tàu vũ trụ đưa cả nhóm lên trạm không gian quốc tế ISS'
+    };
+  }
+
+  // Fallback
+  return {
+    badge: '🎁 PHẦN THƯỞNG',
+    badgeClass: 'bg-indigo-600 text-white shadow-indigo-500/30',
+    borderClass: 'border-slate-300 hover:border-indigo-500 shadow-slate-100',
+    headerBg: 'from-slate-100 via-indigo-50/40 to-white',
+    priceColor: 'text-indigo-600',
+    priceDisplay: r.priceFormatted || (r.price.toLocaleString('vi-VN') + 'đ'),
+    pointsText: r.pointsFormatted || `${Math.round(r.price / 1000)} Điểm`,
+    unit: 'phần',
+    tagline: r.desc || ''
+  };
+}
+
+// SPOTLIGHT HERO CARD (BOEING 787-9 AIRPLANE 23 TỶ - VỊ TRÍ SPOTLIGHT ĐỈNH CAO)
+function createSpotlightAirplaneHero(r, isModal = false) {
+  const hero = document.createElement('div');
+  
+  hero.className = `spotlight-hero-card relative rounded-3xl overflow-hidden border-2 border-amber-400 text-white flex flex-col justify-between shadow-2xl h-full ${
+    isModal ? 'p-3 sm:p-4' : 'p-5 sm:p-6'
+  }`;
+
+  hero.innerHTML = `
+    <!-- Background atmospheric glow -->
+    <div class="absolute -top-16 -right-16 w-60 h-60 bg-sky-500/25 rounded-full blur-3xl pointer-events-none"></div>
+    <div class="absolute -bottom-16 -left-16 w-60 h-60 bg-amber-500/25 rounded-full blur-3xl pointer-events-none"></div>
+
+    <!-- 1. Top Crown Banner -->
+    <div class="relative z-10 flex items-center justify-between gap-2">
+      <span class="px-3 py-1 rounded-full bg-gradient-to-r from-amber-400 via-yellow-300 to-amber-500 text-slate-950 font-black text-[11px] sm:text-xs uppercase tracking-wider shadow-lg flex items-center gap-1.5">
+        <i class="fa-solid fa-crown text-amber-900"></i>
+        <span>⭐ CỰC PHẨM SPOTLIGHT • TRIỆU ĐÔ</span>
+      </span>
+      <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold ${
+        r.stock > 0 
+          ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40' 
+          : 'bg-rose-500/20 text-rose-300 border border-rose-500/40 animate-pulse'
+      }">
+        <i class="fa-solid fa-plane"></i> Tồn: <strong class="text-white">${r.stock > 0 ? `${r.stock} chiếc` : 'HẾT HÀNG'}</strong>
+      </span>
+    </div>
+
+    <!-- 2. Majestic Airplane Showroom Pedestal Stage (Clean White Showroom Pedestal - Large Image) -->
+    <div class="relative z-10 my-2 rounded-2xl bg-white border-2 border-sky-300/80 flex flex-col items-center justify-center p-2.5 relative overflow-hidden shadow-lg group flex-1 min-h-[160px] sm:min-h-[180px]">
+      <img src="${r.image}" alt="${r.name}" class="plane-anim ${
+        isModal ? 'max-h-36 sm:max-h-44 md:max-h-48' : 'max-h-44 sm:max-h-52'
+      } w-full object-contain filter drop-shadow-md cursor-pointer transition-transform duration-300 group-hover:scale-105" onclick="sellShopReward(${r.id})" title="Bấm để trừ tồn kho chiếc máy bay" />
+      <div class="mt-1 flex items-center justify-between w-full text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-slate-50 border border-slate-200/80 shrink-0">
+        <span class="text-sky-800">✈️ Boeing 787-9 Dreamliner</span>
+        <span class="text-amber-600 font-black">Vietnam Airlines</span>
+      </div>
+    </div>
+
+    <!-- 3. Title & Intro Description -->
+    <div class="relative z-10 space-y-0.5 text-left">
+      <h3 class="text-sm sm:text-base font-black text-amber-300 bungee-font tracking-tight leading-snug">
+        ${r.name}
+      </h3>
+      <p class="text-[11px] text-slate-300 leading-relaxed font-normal line-clamp-2">
+        ${r.desc}
+      </p>
+    </div>
+
+    <!-- 4. Price Showcase Card (No points line, maximizes image space) -->
+    <div class="relative z-10 mt-1.5 p-2.5 rounded-2xl bg-slate-900/90 border border-amber-400/60 shadow-md text-left flex items-baseline justify-between">
+      <span class="text-[9px] uppercase font-bold text-slate-400 tracking-wider">Trị giá niêm yết:</span>
+      <div class="text-base sm:text-lg xl:text-xl font-black text-amber-400 bungee-font tracking-tight drop-shadow-md">
+        ${r.priceFormatted || '23.000.000.000đ'}
+        <span class="text-[10px] font-bold text-amber-200 uppercase tracking-normal">(23 TỶ)</span>
+      </div>
+    </div>
+
+    <!-- 5. Action Buttons (Sell / Restock) -->
+    <div class="relative z-10 pt-2 flex items-center gap-2 shrink-0">
+      <button type="button" onclick="sellShopReward(${r.id})" ${r.stock <= 0 ? 'disabled' : ''} class="flex-1 py-2 sm:py-2.5 px-3 rounded-xl font-black text-xs uppercase tracking-wider transition-all flex items-center justify-center gap-1.5 shadow-lg active:scale-95 cursor-pointer ${
+        r.stock > 0 
+          ? 'bg-gradient-to-r from-emerald-500 via-teal-500 to-emerald-600 hover:from-emerald-400 text-white shadow-emerald-500/40 ring-1 ring-emerald-400/40' 
+          : 'bg-slate-800 text-slate-500 border border-slate-700 cursor-not-allowed'
+      }">
+        <i class="fa-solid fa-check-double text-xs"></i>
+        <span>${r.stock > 0 ? 'ĐÃ BÁN CHIẾC NÀY (-1)' : 'ĐÃ HẾT HÀNG'}</span>
+      </button>
+      <button type="button" onclick="restockShopReward(${r.id})" title="Hoàn lại +1 nếu bấm nhầm" class="py-2 sm:py-2.5 px-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-black text-xs transition border border-slate-700 active:scale-95 cursor-pointer">
+        +1
+      </button>
+    </div>
+  `;
+  return hero;
+}
+
+function createShopProductElement(r, isModal = false) {
+  const cfg = getShopProductConfig(r);
+  const card = document.createElement('div');
+  
+  card.className = `product-card group relative flex flex-col justify-between rounded-2xl border-2 ${cfg.borderClass} bg-white overflow-hidden shadow-sm hover:shadow-lg transition-all text-left ${
+    isModal ? 'p-2 sm:p-2.5' : 'p-3'
+  }`;
+
+  const nameLower = (r.name || '').toLowerCase();
+  // Photographic items fill the frame with object-cover (Voi, Chuối, Soyuz), while Bá Khí and snacks stay uncropped (object-contain)
+  const isPhotoCover = nameLower.includes('voi') || nameLower.includes('chuối') || nameLower.includes('soyuz') || nameLower.includes('vũ trụ');
+
+  const mediaHtml = r.image 
+    ? (isPhotoCover
+        ? `<img src="${r.image}" alt="${r.name}" class="product-img w-full h-full object-cover object-center rounded-lg transition-transform duration-300 group-hover:scale-105" />`
+        : `<img src="${r.image}" alt="${r.name}" class="product-img max-h-24 sm:max-h-28 w-auto max-w-full object-contain filter drop-shadow-md transition-transform duration-300 group-hover:scale-110" />`
+      )
+    : `<div class="${isModal ? 'text-3xl' : 'text-4xl'} filter drop-shadow">${r.icon || '🎁'}</div>`;
+
+  const baKhiPreviewBtn = cfg.isBaKhi
+    ? `<button type="button" onclick="triggerBaKhiPreview()" class="px-1.5 py-0.5 rounded-md bg-cyan-100 hover:bg-cyan-200 text-cyan-800 text-[10px] font-black transition cursor-pointer flex items-center gap-1 shadow-xs shrink-0" title="Bấm nghe thử tràng pháo tay!">
+        <i class="fa-solid fa-hands-clapping text-cyan-600"></i>
+        <span>Vỗ tay</span>
+      </button>`
+    : '';
+
+  card.innerHTML = `
+    <!-- Top Bar: Badge and Preview button -->
+    <div class="flex items-center justify-between gap-1 mb-1">
+      <span class="px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider ${cfg.badgeClass} truncate">
+        ${cfg.badge}
+      </span>
+      ${baKhiPreviewBtn}
+    </div>
+
+    <!-- Product Showcase Spotlight Pedestal (TĂNG KÍCH THƯỚC ẢNH TO RÕ RÀNG) -->
+    <div class="${isModal ? 'h-24 sm:h-28 md:h-32' : 'h-28 sm:h-36'} bg-gradient-to-b ${cfg.headerBg} product-card-spotlight rounded-xl flex items-center justify-center p-1 border border-slate-100 relative mb-1.5 overflow-hidden">
+      ${mediaHtml}
+    </div>
+
+    <!-- Info & Pricing -->
+    <div class="space-y-1 flex-1 flex flex-col justify-between">
+      <div>
+        <h4 class="font-black text-slate-900 ${isModal ? 'text-xs sm:text-[13px]' : 'text-xs lg:text-sm'} leading-snug line-clamp-1 group-hover:text-indigo-600 transition" title="${r.name}">
+          ${r.name}
+        </h4>
+      </div>
+
+      <div class="pt-1 border-t border-slate-100 space-y-1">
+        <!-- Price in VNĐ (ĐÃ XÓA DÒNG CẦN BAO NHIÊU ĐIỂM ĐỂ DÀNH KHÔNG GIAN CHO ẢNH TO) -->
+        <div class="flex items-baseline justify-between">
+          <span class="text-[9px] font-bold uppercase tracking-wider text-slate-400">Trị giá:</span>
+          <span class="${isModal ? 'text-xs sm:text-sm' : 'text-sm lg:text-base'} font-black ${cfg.priceColor} bungee-font tracking-tight truncate">
+            ${cfg.priceDisplay}
+          </span>
+        </div>
+
+        <!-- TỒN KHO ROW (CỰC KỲ RÕ RÀNG, ĐỘC LẬP) -->
+        <div class="flex items-center justify-between text-[10px] font-bold py-0.5">
+          <span class="text-slate-500 text-[9px]">Tồn kho:</span>
+          <span class="px-2 py-0.5 rounded-md font-black text-[9px] sm:text-[10px] ${
+            r.stock > 0 
+              ? 'bg-emerald-100 text-emerald-800 border border-emerald-300' 
+              : 'bg-rose-100 text-rose-700 border border-rose-300 animate-pulse'
+          }">
+            ${r.stock > 0 ? `Còn ${r.stock} ${cfg.unit}` : 'HẾT HÀNG'}
+          </span>
+        </div>
+
+        <!-- Host Sold / Restock Control Button -->
+        <div class="pt-1 border-t border-slate-100 flex items-center gap-1">
+          <button type="button" onclick="sellShopReward(${r.id})" ${r.stock <= 0 ? 'disabled' : ''} class="flex-1 py-1 px-1.5 rounded-lg font-black text-[10px] sm:text-[11px] transition-all flex items-center justify-center gap-1 shadow-xs active:scale-95 cursor-pointer ${
+            r.stock > 0 
+              ? 'bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 text-white shadow-emerald-500/20' 
+              : 'bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed'
+          }">
+            <i class="fa-solid fa-check text-[9px]"></i>
+            <span>${r.stock > 0 ? 'ĐÃ BÁN (-1)' : 'HẾT'}</span>
+          </button>
+          <button type="button" onclick="restockShopReward(${r.id})" title="Hoàn lại +1 nếu bấm nhầm" class="py-1 px-2.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-black text-[10px] sm:text-[11px] transition border border-slate-200 active:scale-95 cursor-pointer">
+            +1
+          </button>
+        </div>
+      </div>
+    </div>
+  `;
+  return card;
+}
+
+window.sellShopReward = function(rewardId) {
+  socket.emit('host:sell_reward', { rewardId });
+  if (window.gameSound && window.gameSound.playCorrect) {
+    window.gameSound.playCorrect();
+  }
+};
+
+window.restockShopReward = function(rewardId) {
+  socket.emit('host:restock_reward', { rewardId });
+  if (window.gameSound && window.gameSound.playTick) {
+    window.gameSound.playTick();
+  }
+};
+
+window.triggerBaKhiPreview = function() {
+  socket.emit('host:trigger_bakhi', {
+    playerName: 'Đại diện Bá Khí',
+    teamName: 'Nhóm Siêu Đẳng'
+  });
+};
+
+// Render Post-Game Shop on Projector
+function renderPostGameShop(state) {
+  const spotlightContainer = document.getElementById('shopSpotlightContainer');
+  const gridReal = document.getElementById('shopGridReal');
+  const gridLuxury = document.getElementById('shopGridLuxury');
+  const rewardsList = (state && state.shopRewards && state.shopRewards.length > 0) ? state.shopRewards : (cachedShopRewards || []);
+
+  if (!rewardsList || rewardsList.length === 0) return;
+
+  const airplane = rewardsList.find(r => r.id === 100 || r.isSpotlight);
+  const realItems = rewardsList.filter(r => r.id !== 100 && !r.isSpotlight && (r.category === 'real' || !r.category || r.id === 101 || [1, 2, 3, 4].includes(r.id)));
+  const luxuryItems = rewardsList.filter(r => r.category === 'luxury' || [102, 103, 104].includes(r.id));
+
+  if (spotlightContainer && airplane) {
+    spotlightContainer.innerHTML = '';
+    spotlightContainer.appendChild(createSpotlightAirplaneHero(airplane, false));
+  }
+
+  if (gridReal) {
+    gridReal.innerHTML = '';
+    realItems.forEach(r => {
+      gridReal.appendChild(createShopProductElement(r, false));
+    });
+  }
+
+  if (gridLuxury) {
+    gridLuxury.innerHTML = '';
+    luxuryItems.forEach(r => {
+      gridLuxury.appendChild(createShopProductElement(r, false));
+    });
+  }
+}
+
+// Render Host Modal Shop
+async function renderHostShopModal() {
+  const spotlightContainer = document.getElementById('hostShopSpotlightContainer');
+  const gridReal = document.getElementById('hostShopGridReal');
+  const gridLuxury = document.getElementById('hostShopGridLuxury');
+
+  let rewardsList = (currentGameState && currentGameState.shopRewards && currentGameState.shopRewards.length > 0)
+    ? currentGameState.shopRewards
+    : await fetchShopRewardsFallback();
+
+  if (!rewardsList || rewardsList.length === 0) return;
+
+  const airplane = rewardsList.find(r => r.id === 100 || r.isSpotlight);
+  const realItems = rewardsList.filter(r => r.id !== 100 && !r.isSpotlight && (r.category === 'real' || !r.category || r.id === 101 || [1, 2, 3, 4].includes(r.id)));
+  const luxuryItems = rewardsList.filter(r => r.category === 'luxury' || [102, 103, 104].includes(r.id));
+
+  if (spotlightContainer && airplane) {
+    spotlightContainer.innerHTML = '';
+    spotlightContainer.appendChild(createSpotlightAirplaneHero(airplane, true));
+  }
+
+  if (gridReal) {
+    gridReal.innerHTML = '';
+    realItems.forEach(r => {
+      gridReal.appendChild(createShopProductElement(r, true));
+    });
+  }
+
+  if (gridLuxury) {
+    gridLuxury.innerHTML = '';
+    luxuryItems.forEach(r => {
+      gridLuxury.appendChild(createShopProductElement(r, true));
+    });
+  }
+}
+
+const btnHostOpenShopPreview = document.getElementById('btnHostOpenShopPreview');
+const hostShopModal = document.getElementById('hostShopModal');
+const btnCloseHostShopModal = document.getElementById('btnCloseHostShopModal');
+const btnCloseHostShopModalBottom = document.getElementById('btnCloseHostShopModalBottom');
+
+if (btnHostOpenShopPreview) {
+  btnHostOpenShopPreview.addEventListener('click', () => {
+    renderHostShopModal();
+    if (hostShopModal) hostShopModal.classList.remove('hidden');
+  });
+}
+if (btnCloseHostShopModal) {
+  btnCloseHostShopModal.addEventListener('click', () => {
+    if (hostShopModal) hostShopModal.classList.add('hidden');
+  });
+}
+if (btnCloseHostShopModalBottom) {
+  btnCloseHostShopModalBottom.addEventListener('click', () => {
+    if (hostShopModal) hostShopModal.classList.add('hidden');
+  });
+}
+
+// BÁ KHÍ ACTIVATED EVENT LISTENER ON HOST (1 TRÀNG VỖ TAY CHO NHÓM BÁ KHÍ NHẤT LỚP)
+socket.on('game:bakhi_activated', (data) => {
+  const modal = document.getElementById('bakhiModal');
+  const msgEl = document.getElementById('bakhiMessage');
+  if (modal) {
+    if (msgEl && data.message) {
+      msgEl.textContent = `${data.message} 👏👏👏`;
+    }
+    modal.classList.remove('hidden');
+    if (window.gameSound && window.gameSound.playApplause) {
+      window.gameSound.playApplause();
+    }
+    confetti({ particleCount: 160, spread: 100, origin: { y: 0.55 } });
+  }
+});
+
+const btnCloseBakhiHost = document.getElementById('btnCloseBakhiModal');
+if (btnCloseBakhiHost) {
+  btnCloseBakhiHost.addEventListener('click', () => {
+    const modal = document.getElementById('bakhiModal');
+    if (modal) modal.classList.add('hidden');
+  });
 }

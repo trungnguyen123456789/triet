@@ -45,11 +45,75 @@ document.getElementById('joinForm').addEventListener('submit', (e) => {
   window.gameSound.init();
 });
 
+// BÁ KHÍ ACTIVATED EVENT (1 TRÀNG VỖ TAY)
+socket.on('game:bakhi_activated', (data) => {
+  const modal = document.getElementById('bakhiModal');
+  const msgEl = document.getElementById('bakhiMessage');
+  if (modal) {
+    if (msgEl && data.message) msgEl.textContent = `${data.message} 👏👏👏`;
+    modal.classList.remove('hidden');
+    if (window.gameSound && window.gameSound.playApplause) {
+      window.gameSound.playApplause();
+    }
+  }
+});
+
+const btnCloseBakhiMobile = document.getElementById('btnCloseBakhiModal');
+if (btnCloseBakhiMobile) {
+  btnCloseBakhiMobile.addEventListener('click', () => {
+    const modal = document.getElementById('bakhiModal');
+    if (modal) modal.classList.add('hidden');
+  });
+}
+
 // Answer Option Buttons
+let stuckBuzzerClickCount = 0;
+let lastStuckQuestionIndex = -1;
+
+function showStuckToast(msg) {
+  let toast = document.getElementById('stuckBuzzerToast');
+  if (!toast) {
+    toast = document.createElement('div');
+    toast.id = 'stuckBuzzerToast';
+    toast.className = 'fixed top-16 left-4 right-4 z-50 p-3 bg-rose-600 text-white font-black text-center text-sm rounded-2xl shadow-2xl border-2 border-yellow-300 animate-bounce';
+    document.body.appendChild(toast);
+  }
+  toast.textContent = msg;
+  toast.classList.remove('hidden');
+}
+
+function hideStuckToast() {
+  const toast = document.getElementById('stuckBuzzerToast');
+  if (toast) toast.classList.add('hidden');
+}
+
 const optionButtons = document.querySelectorAll('#mobileOptionsGrid button');
 optionButtons.forEach(btn => {
   btn.addEventListener('click', () => {
     if (!currentGameState || currentGameState.status !== 'QUESTION') return;
+
+    const myTeam = currentGameState.teams.find(t => t.id === myInfo.teamId);
+    const hasStuckBuzzer = !!(myTeam && myTeam.buffs && myTeam.buffs.stuckBuzzer > 0);
+
+    if (currentGameState.currentQuestionIndex !== lastStuckQuestionIndex) {
+      lastStuckQuestionIndex = currentGameState.currentQuestionIndex;
+      stuckBuzzerClickCount = 0;
+    }
+
+    if (hasStuckBuzzer) {
+      stuckBuzzerClickCount++;
+      if (navigator.vibrate) navigator.vibrate(50);
+      const remainingClicks = 5 - stuckBuzzerClickCount;
+      if (remainingClicks > 0) {
+        showStuckToast(`🐢 CHUÔNG BỊ KẸT NÚT! Bấm nhanh thêm ${remainingClicks} lần nữa!`);
+        btn.classList.add('scale-95');
+        setTimeout(() => btn.classList.remove('scale-95'), 100);
+        return;
+      }
+      // Reached 5 clicks!
+      stuckBuzzerClickCount = 0;
+      hideStuckToast();
+    }
 
     const optIndex = parseInt(btn.getAttribute('data-opt'), 10);
 
@@ -161,6 +225,14 @@ socket.on('game:post_action_tick', (data) => {
   const statusNotice = document.getElementById('mobileStatusNotice');
   if (statusNotice) {
     statusNotice.textContent = `⏳ ${data.message} sau ${data.remaining}s...`;
+  }
+});
+
+// Countdown tick
+socket.on('game:countdown_tick', (data) => {
+  const statusNotice = document.getElementById('statusNotice');
+  if (statusNotice && currentGameState && currentGameState.status === 'COUNTDOWN') {
+    statusNotice.textContent = `⏳ ${currentGameState.isRound2 ? 'MỞ LẠI CHUÔNG' : 'CHUẨN BỊ'}: ${data.count}s... CHÚ Ý MÁY CHIẾU!`;
   }
 });
 
@@ -298,6 +370,10 @@ function renderMobileQuestion(state) {
   const isTeamLocked = state.lockedTeamsForQuestion.includes(myInfo.teamId);
   const isSilenced = !!(myTeam && myTeam.buffs && (myTeam.buffs.silenced || myTeam.buffs.frozen > 0));
   const hasRiskReward = !!(myTeam && myTeam.buffs && myTeam.buffs.riskReward);
+  const hideTwoWrong = (myTeam && myTeam.buffs && myTeam.buffs.hideTwoWrong) || [];
+  const hasConfusion = !!(myTeam && myTeam.buffs && myTeam.buffs.confusion > 0);
+  const hasStuckBuzzer = !!(myTeam && myTeam.buffs && myTeam.buffs.stuckBuzzer > 0);
+  const hasNitroX3 = !!(myTeam && myTeam.buffs && myTeam.buffs.nitroX3);
 
   // Silenced banner
   const silencedNotice = document.getElementById('silencedNotice');
@@ -313,6 +389,83 @@ function renderMobileQuestion(state) {
     else riskNotice.classList.add('hidden');
   }
 
+  // Nitro X3 banner
+  let nitroNotice = document.getElementById('nitroNotice');
+  if (!nitroNotice) {
+    const parent = document.getElementById('mobileOptionsGrid').parentElement;
+    nitroNotice = document.createElement('div');
+    nitroNotice.id = 'nitroNotice';
+    nitroNotice.className = 'mb-2 p-2 bg-gradient-to-r from-red-600 to-amber-500 text-white rounded-xl text-center text-xs font-black shadow animate-pulse';
+    parent.insertBefore(nitroNotice, document.getElementById('mobileOptionsGrid'));
+  }
+  if (hasNitroX3) {
+    nitroNotice.textContent = '🚀 BỐC ĐẦU NITRO X3: Đúng x3 điểm, Sai hoặc Không bấm được -8 điểm!';
+    nitroNotice.classList.remove('hidden');
+  } else {
+    nitroNotice.classList.add('hidden');
+  }
+
+  // 50/50 banner
+  let fiftyFiftyNotice = document.getElementById('fiftyFiftyNotice');
+  if (!fiftyFiftyNotice) {
+    const parent = document.getElementById('mobileOptionsGrid').parentElement;
+    fiftyFiftyNotice = document.createElement('div');
+    fiftyFiftyNotice.id = 'fiftyFiftyNotice';
+    fiftyFiftyNotice.className = 'mb-2 p-2 bg-blue-600 text-white rounded-xl text-center text-xs font-bold shadow';
+    parent.insertBefore(fiftyFiftyNotice, document.getElementById('mobileOptionsGrid'));
+  }
+  if (hideTwoWrong && hideTwoWrong.length > 0) {
+    fiftyFiftyNotice.textContent = '🔍 ĐÃ DÙNG 50/50: Đã gạch bỏ 2 phương án sai!';
+    fiftyFiftyNotice.classList.remove('hidden');
+  } else {
+    fiftyFiftyNotice.classList.add('hidden');
+  }
+
+  // Confusion (shuffle keys)
+  let confusionNotice = document.getElementById('confusionNotice');
+  if (!confusionNotice) {
+    const parent = document.getElementById('mobileOptionsGrid').parentElement;
+    confusionNotice = document.createElement('div');
+    confusionNotice.id = 'confusionNotice';
+    confusionNotice.className = 'mb-2 p-2 bg-purple-700 text-white rounded-xl text-center text-xs font-bold shadow animate-pulse';
+    parent.insertBefore(confusionNotice, document.getElementById('mobileOptionsGrid'));
+  }
+  if (hasConfusion) {
+    confusionNotice.textContent = '🌀 LỜI NGUYỀN XÁO TRỘN PHÍM! Vị trí các nút A-B-C-D đã bị đảo lộn!';
+    confusionNotice.classList.remove('hidden');
+    const permOrder = [
+      [2, 0, 3, 1],
+      [3, 1, 0, 2],
+      [1, 3, 2, 0],
+      [2, 3, 1, 0]
+    ][(state.currentQuestionIndex || 0) % 4];
+    optionButtons.forEach(btn => {
+      const idx = parseInt(btn.getAttribute('data-opt'), 10);
+      btn.style.order = permOrder[idx];
+    });
+  } else {
+    confusionNotice.classList.add('hidden');
+    optionButtons.forEach(btn => {
+      btn.style.order = '';
+    });
+  }
+
+  // Stuck buzzer banner
+  let stuckNotice = document.getElementById('stuckNotice');
+  if (!stuckNotice) {
+    const parent = document.getElementById('mobileOptionsGrid').parentElement;
+    stuckNotice = document.createElement('div');
+    stuckNotice.id = 'stuckNotice';
+    stuckNotice.className = 'mb-2 p-2 bg-amber-600 text-white rounded-xl text-center text-xs font-bold shadow';
+    parent.insertBefore(stuckNotice, document.getElementById('mobileOptionsGrid'));
+  }
+  if (hasStuckBuzzer) {
+    stuckNotice.textContent = '🐢 CHUÔNG KẸT NÚT: Bạn phải nhấn liên tục 5 lần vào nút đáp án!';
+    stuckNotice.classList.remove('hidden');
+  } else {
+    stuckNotice.classList.add('hidden');
+  }
+
   // Delay 3s check
   let isDelaying = false;
   if (state.status === 'QUESTION') {
@@ -323,16 +476,22 @@ function renderMobileQuestion(state) {
 
   optionButtons.forEach(btn => {
     const optIdx = parseInt(btn.getAttribute('data-opt'), 10);
-    btn.classList.remove('ring-4', 'ring-amber-400');
+    btn.classList.remove('ring-4', 'ring-amber-400', 'line-through');
+
+    const isEliminated = (hideTwoWrong && hideTwoWrong.includes(optIdx));
 
     if (state.status === 'QUESTION' && !isTeamLocked && !isSilenced && !isDelaying) {
       if (hasRiskReward && (optIdx === 1 || optIdx === 2)) {
         // Locked B and C due to Risk/Reward card
         btn.disabled = true;
         btn.classList.add('opacity-20', 'cursor-not-allowed');
+      } else if (isEliminated) {
+        // Eliminated by 50/50
+        btn.disabled = true;
+        btn.classList.add('opacity-20', 'cursor-not-allowed', 'line-through');
       } else {
         btn.disabled = false;
-        btn.classList.remove('opacity-20', 'opacity-30', 'opacity-40', 'cursor-not-allowed');
+        btn.classList.remove('opacity-20', 'opacity-30', 'opacity-40', 'cursor-not-allowed', 'line-through');
         if (hasRiskReward && (optIdx === 0 || optIdx === 3)) {
           btn.classList.add('ring-4', 'ring-amber-400');
         }
@@ -414,6 +573,21 @@ function renderMobilePenalty(penalty) {
   document.getElementById('mPenaltyIcon').textContent = penalty.icon || '💃';
   document.getElementById('mPenaltyTitle').textContent = penalty.title;
   document.getElementById('mPenaltyDesc').textContent = penalty.desc;
+
+  const btnSkip = document.getElementById('btnMobileUseSkipCard');
+  if (btnSkip) {
+    const myTeam = currentGameState && currentGameState.teams ? currentGameState.teams.find(t => t.id === myInfo.teamId) : null;
+    const skipItem = myTeam && myTeam.inventory ? myTeam.inventory.find(i => i.code === 'ITEM_SKIP_PENALTY' || i.code === 'ITEM_SKIP') : null;
+    if (skipItem) {
+      btnSkip.classList.remove('hidden');
+      btnSkip.onclick = () => {
+        socket.emit('player:use_item', { itemId: skipItem.id });
+      };
+    } else {
+      btnSkip.classList.add('hidden');
+      btnSkip.onclick = null;
+    }
+  }
 }
 
 document.getElementById('btnMobileAcceptPenalty').addEventListener('click', () => {
@@ -457,12 +631,15 @@ function renderInventory() {
     return;
   }
 
+  const isActionPenaltyActive = (currentGameState.status === 'ACTION_PENALTY');
+
   team.inventory.forEach(item => {
     const card = document.createElement('div');
     card.className = 'p-3 rounded-2xl bg-slate-50 border border-slate-200 flex flex-col gap-2.5 shadow-sm';
 
     let targetSelectHtml = '';
-    if (item.code === 'ITEM_STEAL' || item.code === 'ITEM_SILENCE') {
+    const needsTarget = (item.code === 'ITEM_STEAL' || item.code === 'ITEM_SILENCE' || item.code === 'ITEM_VAMPIRE' || item.code === 'ITEM_PASS_PENALTY');
+    if (needsTarget) {
       targetSelectHtml = `
         <div class="flex items-center gap-2">
           <label class="text-[10px] text-slate-500 font-bold">Mục tiêu:</label>
@@ -471,6 +648,44 @@ function renderInventory() {
           </select>
         </div>
       `;
+    }
+
+    const isSkipItem = (item.code === 'ITEM_SKIP_PENALTY' || item.code === 'ITEM_SKIP');
+    const isPassPenalty = (item.code === 'ITEM_PASS_PENALTY');
+    const isPassive = (item.code === 'ITEM_REFLECT');
+    const is5050 = (item.code === 'ITEM_50_50');
+    const isQuestionActive = (currentGameState.status === 'QUESTION');
+
+    let btnClass = 'py-1.5 px-3 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 text-white font-black text-xs ml-auto shadow active:scale-95';
+    let btnText = 'KÍCH HOẠT DÙNG 🔥';
+    let isBtnDisabled = false;
+
+    if (isPassive) {
+      btnClass = 'py-1.5 px-3 rounded-xl bg-purple-100 text-purple-700 border border-purple-300 font-black text-[11px] ml-auto cursor-default shadow-sm';
+      btnText = '🛡️ TỰ ĐỘNG PHẢN ĐÒN (BỊ ĐỘNG)';
+      isBtnDisabled = true;
+    } else if (isActionPenaltyActive) {
+      if (isSkipItem) {
+        btnClass = 'py-1.5 px-3 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 text-white font-black text-xs ml-auto shadow animate-pulse';
+        btnText = 'DÙNG BỎ QUA LƯỢT ⏭️';
+      } else if (isPassPenalty) {
+        btnClass = 'py-1.5 px-3 rounded-xl bg-gradient-to-r from-rose-500 to-amber-600 text-white font-black text-xs ml-auto shadow animate-pulse';
+        btnText = 'GẮP PHẠT CHO ĐỐI THỦ 🔄';
+      } else {
+        btnClass = 'py-1.5 px-3 rounded-xl bg-slate-300 text-slate-500 font-bold text-xs ml-auto cursor-not-allowed opacity-60';
+        btnText = '🚫 KHÓA TRONG HÌNH PHẠT';
+        isBtnDisabled = true;
+      }
+    } else {
+      if (isSkipItem || isPassPenalty) {
+        btnClass = 'py-1.5 px-3 rounded-xl bg-slate-200 text-slate-400 font-bold text-xs ml-auto cursor-not-allowed';
+        btnText = 'CHỈ DÙNG KHI DÍNH PHẠT';
+        isBtnDisabled = true;
+      } else if (is5050 && !isQuestionActive) {
+        btnClass = 'py-1.5 px-3 rounded-xl bg-slate-200 text-slate-400 font-bold text-xs ml-auto cursor-not-allowed';
+        btnText = 'CHỈ DÙNG TRONG CÂU HỎI';
+        isBtnDisabled = true;
+      }
     }
 
     card.innerHTML = `
@@ -483,8 +698,8 @@ function renderInventory() {
       </div>
       <div class="flex items-center justify-between pt-1 border-t border-slate-200">
         ${targetSelectHtml}
-        <button id="btnUse_${item.id}" class="py-1.5 px-3 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 text-white font-black text-xs ml-auto shadow active:scale-95">
-          KÍCH HOẠT DÙNG 🔥
+        <button id="btnUse_${item.id}" ${isBtnDisabled ? 'disabled' : ''} class="${btnClass}">
+          ${btnText}
         </button>
       </div>
     `;
@@ -493,8 +708,13 @@ function renderInventory() {
 
     setTimeout(() => {
       const useBtn = document.getElementById(`btnUse_${item.id}`);
-      if (useBtn) {
+      if (useBtn && !isBtnDisabled) {
         useBtn.addEventListener('click', () => {
+          if (currentGameState && currentGameState.status === 'ACTION_PENALTY' && !isSkipItem && !isPassPenalty) {
+            alert('Khi đang nhảy cover, chỉ có vật phẩm Bỏ Qua Lượt hoặc Gắp Lửa Bỏ Tay Người mới được phép sử dụng!');
+            return;
+          }
+
           let targetTeamId = null;
           const selectEl = document.getElementById(`targetTeam_${item.id}`);
           if (selectEl) targetTeamId = parseInt(selectEl.value, 10);
@@ -694,26 +914,62 @@ socket.on('game:wheel_start_spin', (data) => {
   mobileWheelAnim = requestAnimationFrame(anim);
 });
 
-// ==================== TEAM NAME CHALLENGE (10 GIÂY) ====================
+// ==================== TEAM NAME CHALLENGE (5S CHUẨN BỊ + 10S ĐỌC TÊN) ====================
 let mobileChallengeTimer = null;
 function renderMobileTeamNameChallenge(challenge) {
   if (!challenge) return;
+  let prepRemaining = 5.0;
   let remaining = 10.0;
+  let isPrep = true;
+
   const timerEl = document.getElementById('mTeamNameTimer');
-  if (timerEl) timerEl.textContent = '10.0s';
+  const phaseEl = document.getElementById('mTeamNamePhase');
+  const descEl = document.getElementById('mTeamNameDesc');
+  const boxEl = document.getElementById('mTeamNameBox');
+
+  if (boxEl) boxEl.className = 'p-3 bg-amber-50 border border-amber-200 rounded-2xl transition-all';
+  if (phaseEl) phaseEl.textContent = '⏳ 5 GIÂY CHUẨN BỊ (LẮNG NGHE CƠ CHẾ)';
+  if (timerEl) {
+    timerEl.className = 'text-3xl font-black text-amber-500 bungee-font animate-pulse';
+    timerEl.textContent = '5s';
+  }
+  if (descEl) descEl.textContent = 'Người điều hành đang phổ biến cơ chế, sau 5 giây đếm ngược sẽ bắt đầu đọc tên!';
+
   clearInterval(mobileChallengeTimer);
   window.gameSound.playTick();
+
   mobileChallengeTimer = setInterval(() => {
-    remaining -= 0.1;
-    if (remaining > 0) {
-      if (timerEl) timerEl.textContent = remaining.toFixed(1) + 's';
-      if (Math.floor(remaining * 10) % 10 === 0) {
-        window.gameSound.playTick();
+    if (isPrep) {
+      prepRemaining -= 0.1;
+      if (prepRemaining > 0) {
+        if (timerEl) timerEl.textContent = Math.ceil(prepRemaining) + 's';
+        if (Math.floor(prepRemaining * 10) % 10 === 0) {
+          window.gameSound.playTick();
+        }
+      } else {
+        // Switch to 10s challenge
+        isPrep = false;
+        window.gameSound.playBuzz();
+        if (boxEl) boxEl.className = 'p-3 bg-rose-50 border border-rose-200 rounded-2xl transition-all';
+        if (phaseEl) phaseEl.textContent = '🔥 BẮT ĐẦU! THỜI GIAN CÒN LẠI:';
+        if (timerEl) {
+          timerEl.className = 'text-3xl font-black text-rose-600 bungee-font animate-pulse';
+          timerEl.textContent = '10.0s';
+        }
+        if (descEl) descEl.textContent = 'Hãy đọc to và chính xác họ tên các thành viên trong nhóm của bạn trước lớp!';
       }
     } else {
-      clearInterval(mobileChallengeTimer);
-      if (timerEl) timerEl.textContent = '0.0s';
-      window.gameSound.playWrong();
+      remaining -= 0.1;
+      if (remaining > 0) {
+        if (timerEl) timerEl.textContent = remaining.toFixed(1) + 's';
+        if (Math.floor(remaining * 10) % 10 === 0) {
+          window.gameSound.playTick();
+        }
+      } else {
+        clearInterval(mobileChallengeTimer);
+        if (timerEl) timerEl.textContent = '0.0s';
+        window.gameSound.playWrong();
+      }
     }
   }, 100);
 }
@@ -733,23 +989,19 @@ socket.on('game:announcement', (data) => {
 // ==================== POST GAME & TABS ON MOBILE ====================
 const mTabBtnLeaderboard = document.getElementById('mTabBtnLeaderboard');
 const mTabBtnIndiv = document.getElementById('mTabBtnIndiv');
-const mTabBtnShop = document.getElementById('mTabBtnShop');
 
 const mTabContentLeaderboard = document.getElementById('mTabContentLeaderboard');
 const mTabContentIndiv = document.getElementById('mTabContentIndiv');
-const mTabContentShop = document.getElementById('mTabContentShop');
 
 function switchMobilePostGameTab(activeTab) {
-  const activeClass = 'py-2 rounded-xl font-black text-[11px] text-center transition bg-white text-slate-900 shadow-sm';
-  const inactiveClass = 'py-2 rounded-xl font-black text-[11px] text-center transition text-slate-600 hover:text-slate-900';
+  const activeClass = 'py-2 rounded-xl font-black text-xs text-center transition bg-white text-slate-900 shadow-sm';
+  const inactiveClass = 'py-2 rounded-xl font-black text-xs text-center transition text-slate-600 hover:text-slate-900';
 
   if (mTabContentLeaderboard) mTabContentLeaderboard.classList.add('hidden');
   if (mTabContentIndiv) mTabContentIndiv.classList.add('hidden');
-  if (mTabContentShop) mTabContentShop.classList.add('hidden');
 
   if (mTabBtnLeaderboard) mTabBtnLeaderboard.className = inactiveClass;
   if (mTabBtnIndiv) mTabBtnIndiv.className = inactiveClass;
-  if (mTabBtnShop) mTabBtnShop.className = inactiveClass;
 
   if (activeTab === 'leaderboard') {
     if (mTabContentLeaderboard) mTabContentLeaderboard.classList.remove('hidden');
@@ -757,15 +1009,11 @@ function switchMobilePostGameTab(activeTab) {
   } else if (activeTab === 'indiv') {
     if (mTabContentIndiv) mTabContentIndiv.classList.remove('hidden');
     if (mTabBtnIndiv) mTabBtnIndiv.className = activeClass;
-  } else if (activeTab === 'shop') {
-    if (mTabContentShop) mTabContentShop.classList.remove('hidden');
-    if (mTabBtnShop) mTabBtnShop.className = activeClass;
   }
 }
 
 if (mTabBtnLeaderboard) mTabBtnLeaderboard.addEventListener('click', () => switchMobilePostGameTab('leaderboard'));
 if (mTabBtnIndiv) mTabBtnIndiv.addEventListener('click', () => switchMobilePostGameTab('indiv'));
-if (mTabBtnShop) mTabBtnShop.addEventListener('click', () => switchMobilePostGameTab('shop'));
 
 function renderMobilePostGame(state) {
   // 1. Teams Podium & List
@@ -852,9 +1100,9 @@ function renderMobilePostGame(state) {
 // Render Mobile Shop
 function renderMobileShop(state) {
   const team = state.teams.find(t => t.id === myInfo.teamId);
-  const teamTokens = team ? team.score * 100 : 0;
+  const teamTokens = team ? team.score * 1000 : 0;
   const tokenEl = document.getElementById('mTeamTokens');
-  if (tokenEl) tokenEl.textContent = teamTokens;
+  if (tokenEl) tokenEl.textContent = teamTokens.toLocaleString('vi-VN') + 'đ';
 
   const myTeamPlayers = state.players.filter(p => p.teamId === myInfo.teamId);
   myTeamPlayers.sort((a, b) => b.score - a.score);
@@ -876,7 +1124,7 @@ function renderMobileShop(state) {
         <button id="btnBuy_${r.id}" ${canAfford ? '' : 'disabled'}
           class="py-2 px-3 rounded-xl text-xs font-black transition ${
             canAfford 
-              ? 'bg-amber-500 hover:bg-amber-600 text-white shadow active:scale-95' 
+              ? 'bg-rose-600 hover:bg-rose-700 text-white shadow active:scale-95' 
               : 'bg-slate-100 text-slate-400 cursor-not-allowed'
           }">
           ${r.stock <= 0 ? 'HẾT HÀNG' : 'ĐỔI QUÀ'}
@@ -886,12 +1134,16 @@ function renderMobileShop(state) {
       actionBtnHtml = `<span class="text-[10px] text-slate-400 italic">Chỉ MVP tổ được đổi</span>`;
     }
 
+    const mediaHtml = r.image 
+      ? `<img src="${r.image}" alt="${r.name}" class="w-12 h-12 object-contain rounded-xl bg-slate-50 p-0.5 border border-slate-200 shadow-sm shrink-0">` 
+      : `<span class="text-3xl shrink-0">${r.icon}</span>`;
+
     card.innerHTML = `
       <div class="flex items-center gap-3">
-        <span class="text-3xl">${r.icon}</span>
+        ${mediaHtml}
         <div>
-          <h4 class="text-xs font-bold text-slate-800">${r.name}</h4>
-          <p class="text-[10px] text-amber-600 font-bold">${r.price} Xu • Còn: ${r.stock}</p>
+          <h4 class="text-xs font-bold text-slate-800 leading-snug">${r.name}</h4>
+          <p class="text-[11px] text-rose-600 font-black mt-0.5">${r.price.toLocaleString('vi-VN')}đ <span class="text-slate-400 font-normal text-[10px]">• Còn: ${r.stock}</span></p>
         </div>
       </div>
       <div>${actionBtnHtml}</div>
@@ -904,7 +1156,7 @@ function renderMobileShop(state) {
         const btn = document.getElementById(`btnBuy_${r.id}`);
         if (btn) {
           btn.addEventListener('click', () => {
-            if (confirm(`Bạn có chắc muốn dùng ${r.price} Xu của nhóm để đổi: ${r.name}?`)) {
+            if (confirm(`Bạn có chắc muốn dùng ${r.price.toLocaleString('vi-VN')}đ của nhóm để đổi: ${r.name}?`)) {
               socket.emit('player:buy_reward', { rewardId: r.id });
             }
           });

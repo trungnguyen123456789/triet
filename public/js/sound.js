@@ -183,6 +183,41 @@ class GameSound {
       time += note.d * 0.9;
     });
   }
+
+  // Crowd Clapping / Applause Synthesizer
+  playApplause() {
+    if (!this.enabled) return;
+    this.init();
+    const duration = 2.8;
+    for (let i = 0; i < 45; i++) {
+      const clapTime = this.ctx.currentTime + (Math.random() * duration * 0.9);
+      const bufferSize = Math.floor(this.ctx.sampleRate * 0.04);
+      const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
+      const data = buffer.getChannelData(0);
+      for (let j = 0; j < bufferSize; j++) {
+        data[j] = Math.random() * 2 - 1;
+      }
+      const noise = this.ctx.createBufferSource();
+      noise.buffer = buffer;
+
+      const filter = this.ctx.createBiquadFilter();
+      filter.type = 'bandpass';
+      filter.frequency.value = 1100 + Math.random() * 900;
+      filter.Q.value = 2.5;
+
+      const gain = this.ctx.createGain();
+      gain.gain.setValueAtTime(0.25 + Math.random() * 0.25, clapTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, clapTime + 0.038);
+
+      noise.connect(filter);
+      filter.connect(gain);
+      gain.connect(this.ctx.destination);
+
+      noise.start(clapTime);
+      noise.stop(clapTime + 0.04);
+    }
+  }
 }
 
 window.gameSound = new GameSound();
+

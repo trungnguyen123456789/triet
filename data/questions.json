@@ -1,0 +1,362 @@
+[
+  {
+    "id": 1,
+    "question": "Triết học Mác ra đời vào khoảng thời gian nào?",
+    "options": [
+      "Những năm 20 của thế kỷ XIX",
+      "Những năm 30 của thế kỷ XIX",
+      "Những năm 40 của thế kỷ XIX",
+      "Những năm 50 của thế kỷ XIX"
+    ],
+    "answer": 2,
+    "explanation": "Triết học Mác ra đời vào những năm 40 của thế kỷ XIX. Đây là thời kỳ phương thức sản xuất tư bản chủ nghĩa đã phát triển mạnh mẽ ở châu Âu, giai cấp công nhân đã bước lên vũ đài lịch sử, đòi hỏi một vũ khí lý luận sắc bén."
+  },
+  {
+    "id": 2,
+    "question": "Hai nhà tư tưởng vĩ đại nào đã sáng lập ra Chủ nghĩa Mác?",
+    "options": [
+      "C.Mác và V.I.Lênin",
+      "C.Mác và Ph.Ăngghen",
+      "Ph.Ăngghen và V.I.Lênin",
+      "G.V.Hêghen và L.Phoiơbắc"
+    ],
+    "answer": 1,
+    "explanation": "C.Mác (Karl Marx) và Ph.Ăngghen (Friedrich Engels) là hai người đồng sáng lập ra Chủ nghĩa Mác nói chung và Triết học Mác nói riêng vào giữa thế kỷ XIX."
+  },
+  {
+    "id": 3,
+    "question": "Đâu là nguồn gốc lý luận trực tiếp dẫn đến sự ra đời của Triết học Mác?",
+    "options": [
+      "Kinh tế chính trị học cổ điển Anh",
+      "Chủ nghĩa xã hội không tưởng Pháp",
+      "Triết học cổ điển Đức",
+      "Triết học Khai sáng Pháp"
+    ],
+    "answer": 2,
+    "explanation": "Triết học cổ điển Đức (đặc biệt là triết học của Hêghen và Phoiơbắc) là nguồn gốc lý luận trực tiếp hình thành nên Triết học Mác. Trong khi đó, Kinh tế Anh và CNXH Pháp là nguồn gốc của hai bộ phận còn lại."
+  },
+  {
+    "id": 4,
+    "question": "Tác phẩm nào được coi là văn kiện có tính chất cương lĩnh, đánh dấu sự ra đời của Chủ nghĩa Mác?",
+    "options": [
+      "Tư bản",
+      "Tuyên ngôn của Đảng Cộng sản",
+      "Bản thảo kinh tế - triết học năm 1844",
+      "Hệ tư tưởng Đức"
+    ],
+    "answer": 1,
+    "explanation": "Tuyên ngôn của Đảng Cộng sản (tháng 2/1848) do Mác và Ăngghen soạn thảo là tác phẩm đánh dấu sự hình thành cơ bản của chủ nghĩa Mác như một học thuyết hoàn chỉnh, bao gồm cả triết học, kinh tế chính trị và CNXH khoa học."
+  },
+  {
+    "id": 5,
+    "question": "Phát minh nào sau đây KHÔNG thuộc về ba tiền đề khoa học tự nhiên vĩ đại thế kỷ XIX góp phần ra đời triết học Mác?",
+    "options": [
+      "Thuyết tiến hóa",
+      "Định luật bảo toàn và chuyển hóa năng lượng",
+      "Thuyết tương đối",
+      "Học thuyết tế bào"
+    ],
+    "answer": 2,
+    "explanation": "Thuyết tương đối do Albert Einstein công bố vào đầu thế kỷ XX (1905, 1915). Ba tiền đề KHTN dẫn tới sự ra đời triết học Mác vào giữa thế kỷ XIX là Thuyết tế bào, Định luật bảo toàn năng lượng và Thuyết tiến hóa của Đác-uyn."
+  },
+  {
+    "id": 6,
+    "question": "Bộ phận nào KHÔNG nằm trong ba bộ phận cấu thành của Chủ nghĩa Mác - Lênin?",
+    "options": [
+      "Triết học Mác - Lênin",
+      "Xã hội học thực chứng",
+      "Kinh tế chính trị Mác - Lênin",
+      "Chủ nghĩa xã hội khoa học"
+    ],
+    "answer": 1,
+    "explanation": "Chủ nghĩa Mác - Lênin là một hệ thống lý luận thống nhất gồm 3 bộ phận: Triết học, Kinh tế chính trị học và Chủ nghĩa xã hội khoa học. Xã hội học thực chứng là một trào lưu của triết học phương Tây do Auguste Comte sáng lập."
+  },
+  {
+    "id": 7,
+    "question": "C.Mác đã kế thừa yếu tố triết học nào từ G.V. Hêghen?",
+    "options": [
+      "Chủ nghĩa duy vật",
+      "Chủ nghĩa duy tâm khách quan",
+      "Phép biện chứng (hạt nhân hợp lý)",
+      "Lập trường tư sản"
+    ],
+    "answer": 2,
+    "explanation": "Hêghen là nhà triết học duy tâm khách quan, nhưng hệ thống của ông chứa đựng 'hạt nhân hợp lý' là phép biện chứng. Mác đã cải tạo phép biện chứng này trên lập trường duy vật."
+  },
+  {
+    "id": 8,
+    "question": "Giai cấp nào xuất hiện và trở thành lực lượng chính trị độc lập, là điều kiện xã hội cho sự ra đời của Chủ nghĩa Mác?",
+    "options": [
+      "Giai cấp tư sản",
+      "Giai cấp nông dân",
+      "Giai cấp phong kiến",
+      "Giai cấp vô sản"
+    ],
+    "answer": 3,
+    "explanation": "Giai cấp vô sản lớn mạnh thông qua các cuộc khởi nghĩa (như ở Li-ông, Xi-lê-di, phong trào Hiến chương Anh). Họ cần một lý luận dẫn đường, và Triết học Mác ra đời để đáp ứng nhu cầu đó."
+  },
+  {
+    "id": 9,
+    "question": "Đóng góp vĩ đại nhất của C.Mác trong lĩnh vực triết học là gì?",
+    "options": [
+      "Đưa ra chủ nghĩa duy vật vô thần",
+      "Phát hiện ra chủ nghĩa duy vật lịch sử",
+      "Xây dựng phép biện chứng",
+      "Sáng tạo ra lý luận nhận thức"
+    ],
+    "answer": 1,
+    "explanation": "Trước Mác, ngay cả các nhà triết học duy vật (như Phoiơbắc) cũng đều duy tâm khi xem xét lịch sử xã hội. Việc Mác phát hiện ra Chủ nghĩa duy vật lịch sử là cuộc cách mạng vĩ đại, làm cho chủ nghĩa duy vật trở nên triệt để."
+  },
+  {
+    "id": 10,
+    "question": "Hạn chế lớn nhất trong chủ nghĩa duy vật của L. Phoiơbắc mà Mác phải khắc phục là gì?",
+    "options": [
+      "Tính chất siêu hình và duy tâm về lịch sử",
+      "Tính chất duy tâm khách quan",
+      "Tính chất nhị nguyên luận",
+      "Không thừa nhận sự tồn tại của vật chất"
+    ],
+    "answer": 0,
+    "explanation": "Phoiơbắc là nhà duy vật, nhưng phương pháp của ông là siêu hình. Đặc biệt, khi giải thích các hiện tượng xã hội, ông dựa vào tình yêu thương con người và tôn giáo, tức là rơi vào chủ nghĩa duy tâm lịch sử."
+  },
+  {
+    "id": 11,
+    "question": "Theo quan điểm của Triết học Mác, đối tượng nghiên cứu của triết học là gì?",
+    "options": [
+      "Khoa học của các khoa học",
+      "Những quy luật chung nhất của tự nhiên, xã hội và tư duy",
+      "Các định luật vật lý và hóa học của vũ trụ",
+      "Tâm lý và hành vi của con người"
+    ],
+    "answer": 1,
+    "explanation": "Sự ra đời của Triết học Mác đã chấm dứt quan niệm sai lầm coi triết học là 'khoa học của mọi khoa học', xác định đúng đắn đối tượng của nó là nghiên cứu các quy luật vận động, phát triển chung nhất."
+  },
+  {
+    "id": 12,
+    "question": "Định luật bảo toàn và chuyển hóa năng lượng chứng minh điều gì về mặt triết học?",
+    "options": [
+      "Sự tiến hóa của sinh giới",
+      "Nguồn gốc duy nhất của tế bào sinh vật",
+      "Sự thống nhất vật chất của thế giới và tính không thể tiêu diệt của vận động",
+      "Tốc độ ánh sáng là tuyệt đối"
+    ],
+    "answer": 2,
+    "explanation": "Định luật này bác bỏ quan điểm siêu hình coi các hình thức vận động là cô lập. Nó chứng minh năng lượng (vận động của vật chất) không sinh ra cũng không mất đi mà chỉ chuyển hóa, khẳng định thế giới thống nhất ở tính vật chất."
+  },
+  {
+    "id": 13,
+    "question": "Giai đoạn 1848 - 1895 trong tiến trình lịch sử Triết học Mác là giai đoạn gì?",
+    "options": [
+      "Quá trình chuyển biến tư tưởng",
+      "Đề xuất những nguyên lý triết học",
+      "C.Mác và Ph.Ăngghen bổ sung và phát triển toàn diện lý luận",
+      "V.I. Lênin bảo vệ và phát triển triết học Mác"
+    ],
+    "answer": 2,
+    "explanation": "Sau khi Tuyên ngôn Đảng Cộng sản ra đời, từ 1848 cho đến khi Ăngghen mất (1895) là thời kỳ hai ông đúc kết kinh nghiệm từ phong trào công nhân, nghiên cứu chuyên sâu (tiêu biểu là bộ Tư bản) để bổ sung và hoàn thiện lý luận."
+  },
+  {
+    "id": 14,
+    "question": "Thuyết tiến hóa của Charles Darwin đã cung cấp cơ sở khoa học để bác bỏ quan điểm triết học nào?",
+    "options": [
+      "Chủ nghĩa duy vật siêu hình",
+      "Chủ nghĩa duy cảm",
+      "Quan điểm mục đích luận và thần học về nguồn gốc sinh giới",
+      "Chủ nghĩa kinh nghiệm"
+    ],
+    "answer": 2,
+    "explanation": "Thuyết tiến hóa chứng minh các loài sinh vật (kể cả con người) tiến hóa từ thấp đến cao thông qua chọn lọc tự nhiên, giáng đòn chí mạng vào quan niệm tôn giáo cho rằng Thượng đế sáng tạo ra muôn loài."
+  },
+  {
+    "id": 15,
+    "question": "Đặc điểm lớn nhất tạo nên sự khác biệt về chất (bước ngoặt cách mạng) của Triết học Mác so với các trào lưu trước đó là gì?",
+    "options": [
+      "Nó thống nhất giữa tính đảng và tính khoa học",
+      "Nó sáng tạo ra hệ thống khái niệm mới",
+      "Nó là sự thống nhất hữu cơ giữa lý luận và thực tiễn",
+      "Cả A và C đều đúng"
+    ],
+    "answer": 3,
+    "explanation": "Triết học Mác vừa mang tính khoa học sâu sắc, vừa mang tính đảng cộng sản (phục vụ vô sản); đồng thời đặc trưng lớn nhất là nguyên lý thống nhất giữa lý luận và thực tiễn (biến triết học thành vũ khí cải tạo thế giới)."
+  },
+  {
+    "id": 16,
+    "question": "Học thuyết tế bào (của M. Slay-đen và T. Sơ-van) cung cấp cơ sở KHTN cho quan điểm triết học nào?",
+    "options": [
+      "Sự đa dạng ngẫu nhiên của sinh giới",
+      "Nguồn gốc thống nhất của sự sống sinh vật học",
+      "Cấu tạo nguyên tử của vật chất",
+      "Sự bất biến của các loài"
+    ],
+    "answer": 1,
+    "explanation": "Học thuyết tế bào chứng minh thực vật và động vật đều có chung cấu tạo từ tế bào, khẳng định tính thống nhất về mặt vật chất của thế giới hữu cơ và mối liên hệ biện chứng trong sinh giới."
+  },
+  {
+    "id": 17,
+    "question": "V.I.Lênin định nghĩa phạm trù 'vật chất' trong tác phẩm nổi tiếng nào?",
+    "options": [
+      "Chủ nghĩa duy vật và chủ nghĩa kinh nghiệm phê phán",
+      "Bút ký triết học",
+      "Nhà nước và cách mạng",
+      "Làm gì?"
+    ],
+    "answer": 0,
+    "explanation": "Để đấu tranh chống lại phái Makhơ và chủ nghĩa duy tâm bám vào 'cuộc khủng hoảng vật lý học', Lênin đã viết tác phẩm này (1908) và đưa ra định nghĩa kinh điển về vật chất."
+  },
+  {
+    "id": 18,
+    "question": "Thành tựu vĩ đại của sự ra đời Triết học Mác là tạo ra sự thống nhất hữu cơ giữa hai yếu tố nào?",
+    "options": [
+      "Triết học Khai sáng và Triết học Cổ điển",
+      "Chủ nghĩa duy vật và phép biện chứng",
+      "Đạo đức học và Mỹ học",
+      "Chủ nghĩa kinh nghiệm và chủ nghĩa duy lý"
+    ],
+    "answer": 1,
+    "explanation": "Trước Mác, chủ nghĩa duy vật thường gắn với siêu hình, còn phép biện chứng lại nằm trong vỏ bọc duy tâm. Mác đã kết hợp hai yếu tố, sáng tạo ra Chủ nghĩa duy vật biện chứng."
+  },
+  {
+    "id": 19,
+    "question": "Đâu là một trong những phong trào tiêu biểu của giai cấp công nhân đầu thế kỷ XIX làm tiền đề thực tiễn cho Chủ nghĩa Mác?",
+    "options": [
+      "Khởi nghĩa Xô viết Nghệ Tĩnh",
+      "Phong trào Hiến chương ở Anh",
+      "Cách mạng Tân Hợi",
+      "Công xã Paris"
+    ],
+    "answer": 1,
+    "explanation": "Phong trào Hiến chương ở Anh (những năm 30-40 thế kỷ XIX) cùng với khởi nghĩa thợ dệt ở Li-ông (Pháp) và Xi-lê-di (Đức) là 3 phong trào đấu tranh chính trị độc lập tiêu biểu của vô sản trước khi học thuyết Mác ra đời."
+  },
+  {
+    "id": 20,
+    "question": "Theo C.Mác, đâu là biện pháp căn bản nhất để giải phóng con người khỏi sự tha hóa?",
+    "options": [
+      "Giáo dục đạo đức và tôn giáo",
+      "Xóa bỏ chế độ tư hữu tư bản chủ nghĩa bằng cách mạng vô sản",
+      "Cải cách chính trị và tăng lương cho công nhân",
+      "Trở về với lối sống nông nghiệp truyền thống"
+    ],
+    "answer": 1,
+    "explanation": "Trong 'Bản thảo kinh tế - triết học năm 1844', Mác chỉ ra nguyên nhân của sự tha hóa lao động là chế độ tư hữu. Do đó, cách mạng vô sản nhằm thủ tiêu chế độ tư hữu tư bản chủ nghĩa là con đường duy nhất giải phóng con người."
+  },
+  {
+    "id": 21,
+    "question": "Sự kiện khoa học nào vào cuối thế kỷ XIX dẫn đến cuộc 'khủng hoảng vật lý học', tạo cớ cho chủ nghĩa duy tâm tấn công chủ nghĩa duy vật?",
+    "options": [
+      "Thuyết tiến hóa ra đời",
+      "Thuyết nhật tâm của Copernicus được chứng minh",
+      "Việc phát hiện ra tia X, hiện tượng phóng xạ và điện tử (electron)",
+      "Phát minh ra máy hơi nước"
+    ],
+    "answer": 2,
+    "explanation": "Những năm cuối TK XIX, Rơnghen phát hiện tia X (1895), Beccơren phát hiện phóng xạ (1896), Tômxơn phát hiện ra điện tử (1897). Điều này chứng minh nguyên tử không phải là hạt nhỏ nhất và có thể bị phân chia, khiến nhiều nhà khoa học siêu hình lầm tưởng rằng 'vật chất tiêu tan'."
+  },
+  {
+    "id": 22,
+    "question": "Điểm chuẩn đầu vào của Học viện Kỹ thuật Mật mã năm 2026 là bao nhiêu?",
+    "options": [
+      "24,75",
+      "24,85",
+      "23,2",
+      "24,63"
+    ],
+    "answer": 3,
+    "explanation": "Điểm chuẩn đầu vào của Học viện Kỹ thuật Mật mã là 24,63 điểm."
+  },
+  {
+    "id": 23,
+    "question": "Giảng viên của bộ môn Giải tích tên là gì?",
+    "options": [
+      "ThS. Nguyễn Ngọc Thành",
+      "ThS. Vũ Thế Anh",
+      "ThS. Nguyễn Văn Dũng",
+      "ThS. Phạm Thanh Vũ"
+    ],
+    "answer": 1,
+    "explanation": "Giảng viên bộ môn Giải tích là ThS. Vũ Thế Anh."
+  },
+  {
+    "id": 24,
+    "question": "Cái nào sau đây KHÔNG có trong ngày nhập học?",
+    "options": [
+      "Nhận số thứ tự nhập học",
+      "Nộp hồ sơ nhập học trực tiếp",
+      "Khám sức khỏe",
+      "Chụp ảnh làm thẻ sinh viên"
+    ],
+    "answer": 2,
+    "explanation": "Khám sức khỏe không có trong các thủ tục của ngày nhập học trực tiếp."
+  },
+  {
+    "id": 25,
+    "question": "Tháng sắp tới có bao nhiêu ngày?",
+    "options": [
+      "27 ngày",
+      "28 ngày",
+      "30 ngày",
+      "31 ngày"
+    ],
+    "answer": 2,
+    "explanation": "Tháng sắp tới có 30 ngày."
+  },
+  {
+    "id": 26,
+    "question": "Thành viên thuyết trình của Nhóm 2 tên là gì?",
+    "options": [
+      "Nguyễn Tấn Sang",
+      "Nguyễn Đức Trung Nguyên",
+      "Nguyễn Dương Quốc",
+      "Nguyễn Trương Tấn Tài"
+    ],
+    "answer": 1,
+    "explanation": "Thành viên thuyết trình của Nhóm 2 là bạn Nguyễn Đức Trung Nguyên!"
+  },
+  {
+    "id": 27,
+    "question": "Lớp AT23N02 có tổng cộng bao nhiêu thành viên?",
+    "options": [
+      "44",
+      "45",
+      "43",
+      "42"
+    ],
+    "answer": 0,
+    "explanation": "Lớp AT23N02 có tổng cộng 44 thành viên."
+  },
+  {
+    "id": 28,
+    "question": "Thầy Tuyến có cấp bậc quân hàm là gì?",
+    "options": [
+      "Đại tá",
+      "Thượng tá",
+      "Thượng sĩ",
+      "Đại thần"
+    ],
+    "answer": 0,
+    "explanation": "Cấp bậc quân hàm của thầy Tuyến là Đại tá!"
+  },
+  {
+    "id": 29,
+    "question": "Khóa AT23 ở miền Nam nhập học trực tiếp vào ngày nào?",
+    "options": [
+      "11/9",
+      "12/9",
+      "10/9",
+      "13/9"
+    ],
+    "answer": 0,
+    "explanation": "Khóa AT23 ở miền Nam nhập học trực tiếp vào ngày 11/9."
+  },
+  {
+    "id": 30,
+    "question": "Lớp trưởng của lớp AT23N02 tên là gì?",
+    "options": [
+      "Trần Hà Thiên Phúc",
+      "Nguyễn Hồng Phát",
+      "Lương Phú Tuệ",
+      "Nguyễn Đan Thanh"
+    ],
+    "answer": 0,
+    "explanation": "Lớp trưởng của lớp AT23N02 là bạn Trần Hà Thiên Phúc!"
+  }
+]

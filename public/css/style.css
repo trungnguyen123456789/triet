@@ -188,3 +188,67 @@ body {
 ::-webkit-scrollbar-thumb:hover {
   background: #94a3b8;
 }
+
+/* Shop Showcase Card Enhancements */
+.product-card {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.03);
+}
+
+.product-card:hover {
+  transform: translateY(-6px) scale(1.02);
+  box-shadow: 0 20px 35px -10px rgba(0, 0, 0, 0.12), 0 10px 15px -5px rgba(0, 0, 0, 0.06);
+}
+
+.product-card:hover .product-img {
+  transform: scale(1.1) rotate(2deg);
+}
+
+.product-card-spotlight {
+  background: radial-gradient(circle at center, rgba(255,255,255,0.95) 0%, rgba(248,250,252,0.7) 100%);
+}
+
+/* Airplane Spotlight Hero Animation */
+@keyframes planeFloat {
+  0%, 100% {
+    transform: translateY(0px) rotate(0deg);
+  }
+  50% {
+    transform: translateY(-10px) rotate(-1.5deg) scale(1.02);
+  }
+}
+
+.plane-anim {
+  animation: planeFloat 4s ease-in-out infinite;
+}
+
+/* Spotlight Glow */
+.spotlight-hero-card {
+  background: radial-gradient(circle at 50% 25%, rgba(14, 165, 233, 0.22) 0%, rgba(15, 23, 42, 0.98) 75%);
+  box-shadow: 0 0 35px rgba(245, 158, 11, 0.35), 0 20px 50px -10px rgba(14, 165, 233, 0.4);
+  position: relative;
+}
+
+.spotlight-hero-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, #fbbf24, #f59e0b, #fbbf24, transparent);
+  animation: shimmerBorder 3s infinite linear;
+}
+
+@keyframes shimmerBorder {
+  0% { opacity: 0.4; }
+  50% { opacity: 1; filter: drop-shadow(0 0 6px #f59e0b); }
+  100% { opacity: 0.4; }
+}
+
+/* Frost Ice Glow */
+.bakhi-frost-glow {
+  box-shadow: 0 0 25px rgba(6, 182, 212, 0.35);
+}
+
+
